@@ -29,8 +29,8 @@
     "extra": {
       "supabaseUrl": "https://dzvsdphddukzxqamzktc.supabase.co",
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6dnNkcGhkZHVrenhxYW16a3RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MzM3NzQsImV4cCI6MjA5OTUwOTc3NH0.vbJSv9oYSTbE7JxWvH0zjBQmRAstTNcCFPfQomWZ4c0",
-      "apiUrl": "http://localhost:8000/api/v1",
-      "wsUrl": "ws://localhost:8000/ws/v1"
+      "apiUrl": "https://tradescope-ai-api.onrender.com/api/v1",
+      "wsUrl": "wss://tradescope-ai-api.onrender.com/ws/v1"
     }
   }
 }
