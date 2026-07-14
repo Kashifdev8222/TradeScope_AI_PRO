@@ -12,7 +12,7 @@ export default function ClientLayout() {
   if (!isAuthenticated) return <Redirect href="/login" />;
 
   return (
-    <View style={s.root}>
+    <View style={[s.root, isWide && { flexDirection: "row" }]}>
       {isWide && <ClientSidebar />}
       <View style={s.content}>
         <Stack screenOptions={{
@@ -28,7 +28,6 @@ export default function ClientLayout() {
           <Stack.Screen name="kyc" options={{ title: "KYC Verification" }} />
         </Stack>
       </View>
-      {/* Mobile bottom tab bar */}
       {!isWide && <ClientSidebar />}
     </View>
   );
@@ -36,5 +35,5 @@ export default function ClientLayout() {
 
 const s = StyleSheet.create({
   root: { flex: 1, flexDirection: "column", backgroundColor: colors.bg },
-  content: { flex: 1 },
+  content: { flex: 1, overflow: "hidden" },
 });

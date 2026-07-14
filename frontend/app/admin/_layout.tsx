@@ -12,7 +12,7 @@ export default function AdminLayout() {
   if (!isAuthenticated) return <Redirect href="/login" />;
 
   return (
-    <View style={s.root}>
+    <View style={[s.root, isWide && { flexDirection: "row" }]}>
       {isWide && <AdminSidebar />}
       <View style={s.content}>
         <Stack screenOptions={{
@@ -33,5 +33,5 @@ export default function AdminLayout() {
 
 const s = StyleSheet.create({
   root: { flex: 1, flexDirection: "column", backgroundColor: colors.bg },
-  content: { flex: 1 },
+  content: { flex: 1, overflow: "hidden" },
 });
