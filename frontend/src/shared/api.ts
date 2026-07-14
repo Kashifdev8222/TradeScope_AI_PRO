@@ -190,3 +190,94 @@ export const adminApi = {
       body: JSON.stringify({ role_code: roleCode }),
     }),
 };
+
+// ---------------------------------------------------------------------------
+// Trading Account API
+// ---------------------------------------------------------------------------
+
+export interface TradingAccount {
+  id: string;
+  account_number: string;
+  account_name: string;
+  account_type: string;
+  environment: string;
+  base_currency: string;
+  leverage: number;
+  position_mode: string;
+  status: string;
+  ai_enabled: boolean;
+  created_at: string;
+}
+
+export interface AccountDetail {
+  account: TradingAccount;
+  settings: {
+    one_click_enabled: boolean;
+    default_order_size: number;
+    manual_ai_approval: boolean;
+    preferences: any;
+  };
+  risk_limits: {
+    risk_profile: string;
+    max_daily_trades: number;
+    max_open_positions: number;
+    max_position_size: number;
+    daily_loss_limit: number;
+    daily_profit_target: number;
+    max_drawdown: number;
+    allowed_instruments: any;
+    allowed_sessions: any;
+  };
+}
+
+export const accountApi = {
+  list: () => request<TradingAccount[]>("/client/accounts"),
+
+  create: (data: {
+    account_name: string;
+    account_type?: string;
+    environment?: string;
+    base_currency?: string;
+    leverage?: number;
+    position_mode?: string;
+  }) =>
+    request<TradingAccount>("/client/accounts", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  getDetail: (accountId: string) =>
+    request<AccountDetail>(`/client/accounts/${accountId}`),
+
+  update: (accountId: string, data: Record<string, any>) =>
+    request<TradingAccount>(`/client/accounts/${accountId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  updateSettings: (accountId: string, data: Record<string, any>) =>
+    request<any>(`/client/accounts/${accountId}/settings`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  getMetrics: (accountId: string) =>
+    request<any>(`/client/accounts/${accountId}/metrics`),
+};
+
+// ---------------------------------------------------------------------------
+// KYC API
+// ---------------------------------------------------------------------------
+
+export const kycApi = {
+  getStatus: () => request<any>("/client/kyc"),
+
+  submit: () =>
+    request<any>("/client/kyc", { method: "POST" }),
+
+  uploadDocument: (documentType: string, storagePath: string) =>
+    request<any>("/client/kyc/documents", {
+      method: "POST",
+      body: JSON.stringify({ document_type: documentType, storage_path: storagePath }),
+    }),
+};

@@ -124,15 +124,40 @@
 
 ---
 
-## ⬜ Module 3 — Trading Accounts (Next)
+## ✅ Module 3 — Trading Accounts & KYC
 
-### Planned
-- Multiple trading accounts per user
-- Account switcher
-- Account settings (one-click trading, default order size, AI approval mode)
-- Position mode: netting / hedging
-- KYC endpoints + document upload
-- Account status management
+**Status:** Complete
+
+### Backend (FastAPI)
+| Endpoint | Method | Description |
+|---|---|---|
+| `/client/accounts` | GET | List all trading accounts |
+| `/client/accounts` | POST | Create new account (+ auto-create settings & risk limits) |
+| `/client/accounts/{id}` | GET | Get account detail + settings + risk limits |
+| `/client/accounts/{id}` | PATCH | Update account (name, leverage, position mode) |
+| `/client/accounts/{id}/settings` | PATCH | Update account settings (one-click, order size, AI approval) |
+| `/client/accounts/{id}/metrics` | GET | Get account metrics (balance, equity, P/L) |
+| `/client/kyc` | GET | Get KYC status + documents |
+| `/client/kyc` | POST | Submit KYC for review |
+| `/client/kyc/documents` | POST | Upload KYC document record |
+
+### Frontend (Expo)
+| Route | Description |
+|---|---|
+| `/client/accounts` | Account list — view all accounts with status, mode, leverage |
+| `/client/accounts/create` | Create account — name, demo/live, netting/hedging, leverage |
+| `/client/kyc` | KYC status — view status, required docs, submit for review |
+
+### What was built
+- [x] Multiple trading accounts per user
+- [x] Account CRUD with ownership verification
+- [x] Account settings (one-click, default order size, AI approval mode)
+- [x] Account risk limits (auto-created with defaults)
+- [x] Position mode: netting / hedging
+- [x] Environment: demo / live
+- [x] KYC status & submission flow
+- [x] KYC document recording
+- [x] Trading Accounts link on client dashboard
 
 ---
 
@@ -143,7 +168,7 @@
 | 0 — Project Setup | ✅ | 100% |
 | 1 — Auth & Users | ✅ | 100% |
 | 2 — RBAC | ✅ | 100% |
-| 3 — Trading Accounts | ⬜ | 0% |
+| 3 — Trading Accounts | ✅ | 100% |
 | 4 — Market Data | ⬜ | 0% |
 | 5 — Web Trader (Charts) | ⬜ | 0% |
 | 6 — Order & Execution Engine | ⬜ | 0% |

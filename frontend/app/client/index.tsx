@@ -16,6 +16,7 @@ export default function Dashboard() {
     <View style={s.top}><View style={{ flex: 1 }}><Text style={s.g}>Welcome, {user?.full_name?.split(" ")[0] ?? "Trader"}</Text><Text style={s.cd}>{user?.client_code}</Text></View><View style={s.sts}><View style={s.sd} /><Text style={s.st}>{user?.status ?? "active"}</Text></View></View>
     <View style={s.ss}><SB i="wallet-outline" l="Balance" v="$0.00" /><SB i="pie-chart-outline" l="Equity" v="$0.00" /><SB i="trending-up-outline" l="P/L Today" v="$0.00" /></View>
     <N i="person-outline" t="Profile & KYC" s="Manage details and verification" onPress={() => router.push("/client/profile")} />
+    <N i="wallet-outline" t="Trading Accounts" s="Create and manage your accounts" onPress={() => router.push("/client/accounts")} />
     <Text style={s.lbl}>Coming Soon</Text><ND i="bar-chart-outline" t="Portfolio & Charts" s="Module 8" /><ND i="stats-chart-outline" t="Web Trader" s="Module 5" />
 
     {/* Admin button — only visible for admin users */}
