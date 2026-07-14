@@ -111,7 +111,7 @@ function NavItem({ icon, label, href, pathname, router }: any) {
 }
 
 const s = StyleSheet.create({
-  root: { width: 200, backgroundColor: colors.bgDark, paddingTop: spacing.lg, borderRightWidth: 1, borderRightColor: "#1A2433" },
+  root: { width: 230, backgroundColor: colors.bgDark, paddingTop: spacing.lg, borderRightWidth: 1, borderRightColor: "#1A2433" },
 
   brand: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, borderBottomWidth: 1, borderBottomColor: "#1A2433" },
   brandIcon: { width: 36, height: 36, borderRadius: radius.md, backgroundColor: colors.warning, alignItems: "center", justifyContent: "center" },

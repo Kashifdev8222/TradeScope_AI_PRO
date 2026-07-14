@@ -6,15 +6,14 @@ interface Props { children: React.ReactNode; max?: number; scroll?: boolean; sty
 
 export default function ScreenContainer({ children, max = 900, scroll = false, style, contentStyle, padded = true }: Props) {
   const { width } = useWindowDimensions();
-  const isWide = width > max + 40;
   return (
     <View style={[s.base, style]}>
       {scroll ? (
-        <ScrollView contentContainerStyle={[s.inner, padded && { padding: 20 }, { width: isWide ? Math.min(width - 32, max) : "100%", maxWidth: max }, contentStyle]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={[s.inner, padded && { padding: 24 }, { width: "100%", maxWidth: max }, contentStyle]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           {children}
         </ScrollView>
       ) : (
-        <View style={[s.inner, padded && { padding: 20 }, { width: isWide ? Math.min(width - 32, max) : "100%", maxWidth: max, flex: 1 }, contentStyle]}>{children}</View>
+        <View style={[s.inner, padded && { padding: 24 }, { width: "100%", maxWidth: max, flex: 1 }, contentStyle]}>{children}</View>
       )}
     </View>
   );
