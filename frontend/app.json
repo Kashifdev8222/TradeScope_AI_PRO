@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "TradeScope AI",
+    "slug": "tradescope-ai",
+    "scheme": "tradescope",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar"
+    ],
+    "extra": {
+      "supabaseUrl": "https://dzvsdphddukzxqamzktc.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6dnNkcGhkZHVrenhxYW16a3RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MzM3NzQsImV4cCI6MjA5OTUwOTc3NH0.vbJSv9oYSTbE7JxWvH0zjBQmRAstTNcCFPfQomWZ4c0",
+      "apiUrl": "http://localhost:8000/api/v1",
+      "wsUrl": "ws://localhost:8000/ws/v1"
+    }
+  }
+}
