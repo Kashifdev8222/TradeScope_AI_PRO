@@ -127,7 +127,7 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: colors.cardBorder,
   },
   statLabel: { fontSize: fontSize.xs, color: colors.textMuted, textTransform: "uppercase", fontWeight: fontWeight.medium },
-  statValue: { fontSize: 22, fontWeight: fontWeight.bold, color: colors.text },
+  statValue: { fontSize: 26, fontWeight: fontWeight.bold, color: colors.text },
   statIconWrap: {
     position: "absolute", right: 14, top: 14,
     width: 32, height: 32, borderRadius: radius.sm,

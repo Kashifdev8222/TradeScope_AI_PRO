@@ -122,7 +122,7 @@ export default function ClientSidebar() {
 
 const s = StyleSheet.create({
   root: {
-    width: 250, backgroundColor: colors.bgDark,
+    width: 220, backgroundColor: colors.bgDark,
     paddingTop: spacing.lg,
     borderRightWidth: 1, borderRightColor: "#1A2433",
   },

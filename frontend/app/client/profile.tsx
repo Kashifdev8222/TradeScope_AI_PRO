@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../src/shared/stores/authStore";
 import { authApi } from "../../src/shared/api";
@@ -10,34 +10,133 @@ export default function ProfileScreen() {
   const user = useAuthStore((s) => s.user); const setUser = useAuthStore((s) => s.setUser);
   const [edit, setEdit] = useState(false); const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ full_name: "", phone: "", country: "" });
+
   useEffect(() => { if (user) setForm({ full_name: user.full_name, phone: user.phone ?? "", country: user.country ?? "" }); }, [user]);
   const save = async () => { setLoading(true); try { const u = await authApi.updateProfile(form); setUser(u as any); setEdit(false); } catch (e: any) { alert(e.message); } finally { setLoading(false); } };
   if (!user) return null;
+
   return (
-    <ScreenContainer max={650} scroll>
-      <View style={s.top}><View style={s.av}><Ionicons name="person" size={32} color={colors.accent} /></View><Text style={s.nm}>{user.full_name}</Text><Text style={s.cd}>{user.client_code}</Text></View>
-      <View style={s.sc}><Text style={s.st}>Account</Text><R i="mail-outline" l="Email" v={user.email} /><R i="shield-checkmark-outline" l="Status" v={user.status} c={colors.success} /><R i="document-text-outline" l="KYC" v={user.kyc_status} /><R i="cash-outline" l="Currency" v={user.base_currency} /><R i="time-outline" l="Timezone" v={user.timezone} /><R i="document-lock-outline" l="Terms Version" v={user.terms_version || "—"} /><R i="warning-outline" l="Risk Disclosure" v={user.risk_disclosure_version || "—"} last /></View>
-      <View style={s.sc}><Text style={s.st}>Personal Details</Text><F l="Full Name" e={edit} val={form.full_name} onChange={(v: string) => setForm({ ...form, full_name: v })} r={user.full_name} /><F l="Phone" e={edit} val={form.phone} onChange={(v: string) => setForm({ ...form, phone: v })} r={user.phone || "—"} kt="phone-pad" /><F l="Country" e={edit} val={form.country} onChange={(v: string) => setForm({ ...form, country: v })} r={user.country || "—"} max={2} ac />{edit ? <View style={s.br}><TouchableOpacity style={s.cb} onPress={() => setEdit(false)}><Text style={s.ct}>Cancel</Text></TouchableOpacity><TouchableOpacity style={[s.sb, loading && { opacity: 0.7 }]} onPress={save} disabled={loading}>{loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.st2}>Save</Text>}</TouchableOpacity></View> : <TouchableOpacity style={s.eb} onPress={() => setEdit(true)}><Ionicons name="create-outline" size={14} color={colors.accent} /><Text style={s.et}>Edit Details</Text></TouchableOpacity>}</View>
+    <ScreenContainer max={900} scroll>
+      <Text style={s.pageTitle}>Profile & KYC</Text>
+
+      {/* Profile Card */}
+      <View style={s.card}>
+        <View style={s.avatarRow}>
+          <View style={s.avatar}>
+            <Text style={s.avatarT}>{(user.full_name || "?")[0].toUpperCase()}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.name}>{user.full_name}</Text>
+            <Text style={s.code}>{user.client_code}</Text>
+            <View style={s.statusBadge}>
+              <View style={[s.statusDot, { backgroundColor: user.status === "active" ? colors.success : colors.warning }]} />
+              <Text style={[s.statusT, { color: user.status === "active" ? colors.success : colors.warning }]}>{user.status}</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={s.infoGrid}>
+          <InfoBlock icon="mail-outline" label="Email" value={user.email} />
+          <InfoBlock icon="call-outline" label="Phone" value={user.phone || "—"} />
+          <InfoBlock icon="globe-outline" label="Country" value={user.country || "—"} />
+          <InfoBlock icon="cash-outline" label="Currency" value={user.base_currency} />
+          <InfoBlock icon="time-outline" label="Timezone" value={user.timezone} />
+          <InfoBlock icon="document-text-outline" label="KYC Status" value={user.kyc_status} highlight />
+          <InfoBlock icon="document-lock-outline" label="Terms" value={`v${user.terms_version || "1.0"}`} />
+          <InfoBlock icon="warning-outline" label="Risk Disclosure" value={`v${user.risk_disclosure_version || "1.0"}`} />
+        </View>
+      </View>
+
+      {/* Editable Details */}
+      <View style={s.card}>
+        <View style={s.cardHead}>
+          <Text style={s.cardTitle}>Personal Details</Text>
+          {!edit && (
+            <TouchableOpacity style={s.editBtn} onPress={() => setEdit(true)}>
+              <Ionicons name="create-outline" size={15} color={colors.accent} />
+              <Text style={s.editBtnT}>Edit</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <Field label="Full Name" edit={edit} value={form.full_name} onChange={(v: string) => setForm({ ...form, full_name: v })} read={user.full_name} />
+        <Field label="Phone" edit={edit} value={form.phone} onChange={(v: string) => setForm({ ...form, phone: v })} read={user.phone || "—"} keyboardType="phone-pad" />
+        <Field label="Country (2-letter)" edit={edit} value={form.country} onChange={(v: string) => setForm({ ...form, country: v })} read={user.country || "—"} maxLength={2} autoCapitalize="characters" last />
+
+        {edit && (
+          <View style={s.actionRow}>
+            <TouchableOpacity style={s.cancelBtn} onPress={() => setEdit(false)}><Text style={s.cancelT}>Cancel</Text></TouchableOpacity>
+            <TouchableOpacity style={[s.saveBtn, loading && { opacity: 0.7 }]} onPress={save} disabled={loading}>
+              {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.saveT}>Save Changes</Text>}
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
       <View style={{ height: 40 }} />
     </ScreenContainer>
   );
 }
-function R({ i, l, v, c, last }: any) { return <View style={[s.r, !last && s.rb]}><Ionicons name={i} size={15} color={colors.textMuted} /><Text style={s.rl}>{l}</Text>{c ? <View style={[s.bd, { backgroundColor: c + "18" }]}><View style={[s.bdd, { backgroundColor: c }]} /><Text style={[s.rv2, { color: c }]}>{v}</Text></View> : <Text style={[s.rv, { flex: 1, textAlign: "right" }]}>{v}</Text>}</View>; }
-function F({ l, e, val, onChange, r, kt, max, ac }: any) { return <><Text style={s.fl}>{l}</Text>{e ? <TextInput style={s.inp} value={val} onChangeText={onChange} keyboardType={kt} maxLength={max} autoCapitalize={ac ? "characters" : "none"} /> : <Text style={s.fv}>{r}</Text>}</>; }
+
+function InfoBlock({ icon, label, value, highlight }: any) {
+  return (
+    <View style={[is.ib, highlight && { backgroundColor: colors.accentBg, borderRadius: radius.md, padding: 10, margin: -4 }]}>
+      <Ionicons name={icon} size={16} color={colors.textMuted} />
+      <Text style={is.lb}>{label}</Text>
+      <Text style={[is.vl, highlight && { color: colors.accent, fontWeight: fontWeight.semibold }]}>{value}</Text>
+    </View>
+  );
+}
+
+function Field({ label, edit, value, onChange, read, last, ...rest }: any) {
+  return (
+    <View style={[fs.wrap, last && { borderBottomWidth: 0 }]}>
+      <Text style={fs.lb}>{label}</Text>
+      {edit ? (
+        <TextInput style={fs.inp} value={value} onChangeText={onChange} {...rest} />
+      ) : (
+        <Text style={fs.vl}>{read}</Text>
+      )}
+    </View>
+  );
+}
+
+const is = StyleSheet.create({
+  ib: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 6 },
+  lb: { fontSize: fontSize.xs, color: colors.textMuted, width: 80 },
+  vl: { fontSize: fontSize.sm, color: colors.text, fontWeight: fontWeight.medium, flex: 1 },
+});
+
+const fs = StyleSheet.create({
+  wrap: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  lb: { fontSize: fontSize.xs, color: colors.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 },
+  vl: { fontSize: fontSize.md, color: colors.text },
+  inp: { backgroundColor: colors.input, borderRadius: radius.md, padding: 13, fontSize: fontSize.md, color: colors.text, borderWidth: 1, borderColor: colors.inputBorder },
+});
+
 const s = StyleSheet.create({
-  top: { backgroundColor: colors.card, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center", marginBottom: spacing.md, borderWidth: 1, borderColor: colors.cardBorder },
-  av: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.accentBg, alignItems: "center", justifyContent: "center", marginBottom: spacing.md },
-  nm: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.text }, cd: { fontSize: fontSize.sm, color: colors.accent, marginTop: spacing.xs },
-  sc: { backgroundColor: colors.card, borderRadius: radius.xl, padding: spacing.lg, marginBottom: spacing.md, borderWidth: 1, borderColor: colors.cardBorder },
-  st: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: colors.text, marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.divider },
-  r: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 }, rb: { borderBottomWidth: 1, borderBottomColor: colors.divider },
-  rl: { fontSize: fontSize.sm, color: colors.textSecondary }, rv: { fontSize: fontSize.sm, color: colors.text, fontWeight: fontWeight.medium }, rv2: { fontSize: fontSize.sm, fontWeight: fontWeight.medium },
-  bd: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full }, bdd: { width: 6, height: 6, borderRadius: 3 },
-  fl: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: colors.text, marginBottom: spacing.sm, marginTop: spacing.md }, fv: { fontSize: fontSize.md, color: colors.text },
-  inp: { backgroundColor: colors.input, borderRadius: radius.md, padding: 12, fontSize: fontSize.md, color: colors.text, borderWidth: 1, borderColor: colors.inputBorder, marginTop: 4 },
-  br: { flexDirection: "row", gap: 10, marginTop: spacing.lg },
-  eb: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: spacing.lg, backgroundColor: colors.accentBg, borderRadius: radius.md, padding: 12 },
-  et: { color: colors.accent, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
-  cb: { flex: 1, borderRadius: radius.md, padding: 12, alignItems: "center", borderWidth: 1, borderColor: colors.border }, ct: { color: colors.textSecondary, fontWeight: fontWeight.medium },
-  sb: { flex: 1, backgroundColor: colors.accent, borderRadius: radius.md, padding: 12, alignItems: "center" }, st2: { color: "#fff", fontWeight: fontWeight.semibold },
+  pageTitle: { fontSize: 24, fontWeight: fontWeight.bold, color: colors.text, marginBottom: spacing.lg },
+
+  card: { backgroundColor: colors.card, borderRadius: radius.xl, padding: spacing.xl, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.cardBorder },
+  avatarRow: { flexDirection: "row", alignItems: "center", gap: 16, marginBottom: spacing.xl, paddingBottom: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.accent, alignItems: "center", justifyContent: "center" },
+  avatarT: { fontSize: 22, fontWeight: fontWeight.bold, color: "#fff" },
+  name: { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: colors.text },
+  code: { fontSize: fontSize.sm, color: colors.accent, marginTop: 2 },
+  statusBadge: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
+  statusDot: { width: 7, height: 7, borderRadius: 4 },
+  statusT: { fontSize: fontSize.xs, fontWeight: fontWeight.semibold, textTransform: "uppercase" },
+
+  infoGrid: { gap: 4 },
+
+  cardHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md },
+  cardTitle: { fontSize: fontSize.md, fontWeight: fontWeight.semibold, color: colors.text },
+
+  editBtn: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.accentBg, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 8 },
+  editBtnT: { color: colors.accent, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
+
+  actionRow: { flexDirection: "row", gap: 12, marginTop: spacing.lg },
+  cancelBtn: { flex: 1, borderRadius: radius.md, paddingVertical: 13, alignItems: "center", borderWidth: 1, borderColor: colors.inputBorder },
+  cancelT: { color: colors.textSecondary, fontWeight: fontWeight.medium },
+  saveBtn: { flex: 1, backgroundColor: colors.accent, borderRadius: radius.md, paddingVertical: 13, alignItems: "center" },
+  saveT: { color: "#fff", fontWeight: fontWeight.semibold },
 });
