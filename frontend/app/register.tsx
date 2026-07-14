@@ -154,8 +154,7 @@ export default function RegisterScreen() {
             {acceptedTerms && <Ionicons name="checkmark" size={14} color="#fff" />}
           </View>
           <Text style={s.termsText}>
-            I accept the <Text style={s.termsLink}>Terms of Service</Text> and{"\n"}
-            <Text style={s.termsLink}>Risk Disclosure</Text> (v1.0)
+            I accept the <Text style={s.termsLink}>Terms of Service</Text> and <Text style={s.termsLink}>Risk Disclosure</Text> (v1.0)
           </Text>
         </TouchableOpacity>
         {errors.terms && <Text style={[s.err, { marginTop: 4 }]}>{errors.terms}</Text>}
