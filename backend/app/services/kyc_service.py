@@ -5,43 +5,40 @@ from supabase import Client
 
 
 async def get_kyc_status(db: Client, user_id: str) -> dict:
-    """Get KYC profile status for a user."""
-    result = (
-        db.table("kyc_profiles")
-        .select("*")
-        .eq("user_id", user_id)
-        .single()
-        .execute()
-    )
-    return result.data if result.data else {}
+    """Get KYC profile status for a user. Returns empty dict if none exists."""
+    try:
+        result = (
+            db.table("kyc_profiles")
+            .select("*")
+            .eq("user_id", user_id)
+            .single()
+            .execute()
+        )
+        return result.data if result.data else {}
+    except Exception:
+        return {}
 
 
-async def submit_kyc(
-    db: Client,
-    user_id: str,
-    documents: list[dict] = None,
-) -> dict:
-    """
-    Submit or update KYC profile.
-    Creates KYC profile if it doesn't exist.
-    """
-    existing = (
-        db.table("kyc_profiles")
-        .select("id, status")
-        .eq("user_id", user_id)
-        .single()
-        .execute()
-    )
+async def submit_kyc(db: Client, user_id: str) -> dict:
+    """Submit or update KYC profile. Creates if doesn't exist."""
+    try:
+        existing = (
+            db.table("kyc_profiles")
+            .select("id, status")
+            .eq("user_id", user_id)
+            .single()
+            .execute()
+        )
+    except Exception:
+        existing = type("R", (), {"data": None})()
 
     if existing.data:
-        # Update existing KYC profile
         kyc_id = existing.data["id"]
         db.table("kyc_profiles").update({
             "status": "pending",
             "submitted_at": "now()",
         }).eq("id", kyc_id).execute()
     else:
-        # Create new KYC profile
         result = (
             db.table("kyc_profiles")
             .insert({
@@ -54,7 +51,6 @@ async def submit_kyc(
         )
         kyc_id = result.data[0]["id"] if result.data else None
 
-    # Update user_profiles KYC status
     db.table("user_profiles").update({
         "kyc_status": "pending",
     }).eq("id", user_id).execute()
@@ -62,21 +58,18 @@ async def submit_kyc(
     return {"kyc_profile_id": kyc_id, "status": "pending"}
 
 
-async def upload_kyc_document(
-    db: Client,
-    user_id: str,
-    document_type: str,
-    storage_path: str,
-) -> dict:
+async def upload_kyc_document(db: Client, user_id: str, document_type: str, storage_path: str) -> dict:
     """Record a KYC document upload."""
-    # Get KYC profile
-    kyc = (
-        db.table("kyc_profiles")
-        .select("id")
-        .eq("user_id", user_id)
-        .single()
-        .execute()
-    )
+    try:
+        kyc = (
+            db.table("kyc_profiles")
+            .select("id")
+            .eq("user_id", user_id)
+            .single()
+            .execute()
+        )
+    except Exception:
+        raise ValueError("KYC profile not found. Submit KYC first.")
 
     if not kyc.data:
         raise ValueError("KYC profile not found. Submit KYC first.")
@@ -96,13 +89,16 @@ async def upload_kyc_document(
 
 async def list_kyc_documents(db: Client, user_id: str) -> list[dict]:
     """List all KYC documents for a user."""
-    kyc = (
-        db.table("kyc_profiles")
-        .select("id")
-        .eq("user_id", user_id)
-        .single()
-        .execute()
-    )
+    try:
+        kyc = (
+            db.table("kyc_profiles")
+            .select("id")
+            .eq("user_id", user_id)
+            .single()
+            .execute()
+        )
+    except Exception:
+        return []
 
     if not kyc.data:
         return []
