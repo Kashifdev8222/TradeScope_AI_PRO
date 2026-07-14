@@ -1,31 +1,65 @@
-import { useEffect, useState } from "react"; import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router"; import { Ionicons } from "@expo/vector-icons";
-import { adminApi, AdminUserDetail } from "../../src/shared/api"; import { useAuthStore } from "../../src/shared/stores/authStore";
-import ScreenContainer from "../../src/shared/components/ScreenContainer"; import { colors, spacing, radius, fontSize, fontWeight } from "../../src/shared/theme";
+import { useEffect, useState } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { adminApi, AdminUserDetail } from "../../src/shared/api";
+import ScreenContainer from "../../src/shared/components/ScreenContainer";
+import { colors, spacing, radius, fontSize, fontWeight } from "../../src/shared/theme";
+
 export default function AdminDashboard() {
-  const router = useRouter(); const user = useAuthStore((s) => s.user); const [d, setD] = useState<AdminUserDetail | null>(null); const [loading, setLoading] = useState(true); const [err, setErr] = useState("");
-  useEffect(() => { (async () => { try { setD(await adminApi.me()); } catch (e: any) { setErr(e.message || "Not authorized"); } finally { setLoading(false); } })(); }, []);
-  if (loading) return <ScreenContainer max={600}><View style={s.ctr}><ActivityIndicator color={colors.accent} size="large" /></View></ScreenContainer>;
-  if (err) return <ScreenContainer max={480}><View style={s.ctr}><Ionicons name="shield-outline" size={36} color={colors.danger} /><Text style={s.et}>{err}</Text><TouchableOpacity style={s.bb} onPress={() => router.replace("/client")}><Text style={s.bt}>Go to Client Zone</Text></TouchableOpacity></View></ScreenContainer>;
-  return (<ScreenContainer max={800} scroll>
-    <View style={s.top}><View style={s.av}><Ionicons name="person" size={22} color={colors.accent} /></View><View style={{ flex: 1 }}><Text style={s.nm}>{user?.full_name}</Text><Text style={s.rl}>{d?.roles?.map(r => r.name).join(", ") || "Client"}</Text></View></View>
-    <Text style={s.sl}>USER MANAGEMENT</Text>
-    <TouchableOpacity style={s.card} onPress={() => router.push("/admin/users")}><View style={s.ci}><Ionicons name="people-outline" size={19} color={colors.accent} /></View><View style={{ flex: 1 }}><Text style={s.ct}>User Directory</Text><Text style={s.cs}>Search and manage all platform users</Text></View><Ionicons name="chevron-forward" size={16} color={colors.textMuted} /></TouchableOpacity>
-    <Text style={[s.sl, { marginTop: spacing.lg }]}>COMING SOON</Text>
-    <D i="cash-outline" t="Finance Overview" sb="Module 11-12" /><D i="hardware-chip-outline" t="AI Control Panel" sb="Module 9-10" /><D i="settings-outline" t="Platform Settings" sb="Module 16" />
-    <View style={{ height: 40 }} /></ScreenContainer>); }
-function D({ i, t, sb }: any) { return <View style={s.dis}><View style={[s.ci, { backgroundColor: "#F3F4F6" }]}><Ionicons name={i} size={19} color={colors.textMuted} /></View><View style={{ flex: 1 }}><Text style={s.dt}>{t}</Text><Text style={s.cs}>{sb}</Text></View></View>; }
+  const [d, setD] = useState<AdminUserDetail | null>(null);
+
+  useEffect(() => {
+    adminApi.me().then(setD).catch(() => {});
+  }, []);
+
+  const roles = d?.roles?.map(r => r.name).join(", ") || "";
+
+  return (
+    <ScreenContainer max={900} scroll>
+      <View style={s.welcome}>
+        <Text style={s.greeting}>Admin Console</Text>
+        <Text style={s.subtitle}>Manage users, finance, AI, and platform settings</Text>
+      </View>
+
+      <View style={s.statsRow}>
+        <View style={s.stat}>
+          <Ionicons name="people-outline" size={20} color={colors.accent} />
+          <Text style={s.statV}>—</Text>
+          <Text style={s.statL}>Total Users</Text>
+        </View>
+        <View style={s.stat}>
+          <Ionicons name="wallet-outline" size={20} color={colors.success} />
+          <Text style={s.statV}>$0.00</Text>
+          <Text style={s.statL}>Total AUM</Text>
+        </View>
+        <View style={s.stat}>
+          <Ionicons name="shield-checkmark-outline" size={20} color={colors.warning} />
+          <Text style={s.statV}>{roles || "—"}</Text>
+          <Text style={s.statL}>Your Roles</Text>
+        </View>
+      </View>
+
+      <View style={s.placeholder}>
+        <Ionicons name="analytics-outline" size={40} color={colors.textMuted} />
+        <Text style={s.phT}>Finance & Risk dashboards coming in later modules</Text>
+        <Text style={s.phS}>Use the sidebar to manage users</Text>
+      </View>
+      <View style={{ height: 40 }} />
+    </ScreenContainer>
+  );
+}
+
 const s = StyleSheet.create({
-  ctr: { flex: 1, justifyContent: "center", alignItems: "center", padding: spacing.xl },
-  top: { flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: colors.card, borderRadius: radius.xl, padding: spacing.lg, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.cardBorder },
-  av: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.accentBg, alignItems: "center", justifyContent: "center" },
-  nm: { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: colors.text }, rl: { fontSize: fontSize.xs, color: colors.accent, marginTop: 2 },
-  sl: { fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: colors.textMuted, letterSpacing: 1, marginBottom: spacing.md, paddingLeft: 4 },
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.md, flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 10, borderWidth: 1, borderColor: colors.cardBorder },
-  ci: { width: 42, height: 42, borderRadius: radius.md, backgroundColor: colors.accentBg, alignItems: "center", justifyContent: "center" },
-  ct: { fontSize: fontSize.md, fontWeight: fontWeight.semibold, color: colors.text }, cs: { fontSize: fontSize.xs, color: colors.textMuted, marginTop: 1 },
-  dis: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.md, flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 10, borderWidth: 1, borderColor: colors.cardBorder, opacity: 0.5 },
-  dt: { fontSize: fontSize.md, fontWeight: fontWeight.semibold, color: colors.textSecondary },
-  et: { color: colors.danger, fontSize: fontSize.md, marginTop: spacing.md, marginBottom: spacing.lg },
-  bb: { backgroundColor: colors.card, borderRadius: radius.md, paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: colors.cardBorder }, bt: { color: colors.text, fontWeight: fontWeight.medium },
+  welcome: { marginBottom: spacing.lg },
+  greeting: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.text },
+  subtitle: { fontSize: fontSize.sm, color: colors.textSecondary, marginTop: spacing.xs },
+
+  statsRow: { flexDirection: "row", gap: 10, marginBottom: spacing.xl },
+  stat: { flex: 1, backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.md, gap: 4, borderWidth: 1, borderColor: colors.cardBorder },
+  statV: { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: colors.text },
+  statL: { fontSize: fontSize.xs, color: colors.textMuted },
+
+  placeholder: { alignItems: "center", paddingVertical: spacing.xxl, backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.cardBorder, gap: spacing.sm },
+  phT: { fontSize: fontSize.sm, color: colors.textMuted, textAlign: "center" },
+  phS: { fontSize: fontSize.xs, color: colors.textMuted },
 });

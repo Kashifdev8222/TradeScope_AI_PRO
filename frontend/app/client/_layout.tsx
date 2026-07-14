@@ -1,16 +1,40 @@
+import { View, StyleSheet, useWindowDimensions } from "react-native";
 import { Stack, Redirect } from "expo-router";
 import { useAuthStore } from "../../src/shared/stores/authStore";
+import ClientSidebar from "../../src/client/components/ClientSidebar";
 import { colors } from "../../src/shared/theme";
 
 export default function ClientLayout() {
-  if (!useAuthStore((s) => s.isAuthenticated)) return <Redirect href="/login" />;
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { width } = useWindowDimensions();
+  const isWide = width >= 768;
+
+  if (!isAuthenticated) return <Redirect href="/login" />;
+
   return (
-    <Stack screenOptions={{ headerStyle: { backgroundColor: colors.bgDark }, headerTintColor: colors.textLight, headerTitleStyle: { fontWeight: "600" }, contentStyle: { backgroundColor: colors.bg } }}>
-      <Stack.Screen name="index" options={{ title: "TradeScope AI" }} />
-      <Stack.Screen name="profile" options={{ title: "Profile" }} />
-      <Stack.Screen name="accounts" options={{ title: "Trading Accounts" }} />
-      <Stack.Screen name="accounts/create" options={{ title: "New Account" }} />
-      <Stack.Screen name="kyc" options={{ title: "KYC Verification" }} />
-    </Stack>
+    <View style={s.root}>
+      {isWide && <ClientSidebar />}
+      <View style={s.content}>
+        <Stack screenOptions={{
+          headerStyle: { backgroundColor: colors.card },
+          headerTintColor: colors.text,
+          headerTitleStyle: { fontWeight: "600" },
+          contentStyle: { backgroundColor: colors.bg },
+        }}>
+          <Stack.Screen name="index" options={{ title: "Dashboard" }} />
+          <Stack.Screen name="profile" options={{ title: "Profile & KYC" }} />
+          <Stack.Screen name="accounts" options={{ title: "Trading Accounts" }} />
+          <Stack.Screen name="accounts/create" options={{ title: "New Account" }} />
+          <Stack.Screen name="kyc" options={{ title: "KYC Verification" }} />
+        </Stack>
+      </View>
+      {/* Mobile bottom tab bar */}
+      {!isWide && <ClientSidebar />}
+    </View>
   );
 }
+
+const s = StyleSheet.create({
+  root: { flex: 1, flexDirection: "column", backgroundColor: colors.bg },
+  content: { flex: 1 },
+});
