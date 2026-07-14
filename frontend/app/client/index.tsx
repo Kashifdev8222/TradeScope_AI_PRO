@@ -97,12 +97,12 @@ function QuickCardDisabled({ icon, title, desc }: any) {
 
 const s = StyleSheet.create({
   header: { marginBottom: spacing.xl },
-  greeting: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.textLight },
-  subtitle: { fontSize: fontSize.sm, color: colors.textLightSecondary, marginTop: 4 },
+  greeting: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.text },
+  subtitle: { fontSize: fontSize.sm, color: colors.textSecondary, marginTop: 4 },
 
   stats: { flexDirection: "row", gap: 12, marginBottom: spacing.xl },
   stat: {
-    flex: 1, backgroundColor: colors.bgDark,
+    flex: 1, backgroundColor: colors.card,
     borderRadius: radius.lg, padding: spacing.lg, gap: 8,
     borderWidth: 1, borderColor: "#1A2433",
   },
@@ -112,12 +112,12 @@ const s = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   statLabel: { fontSize: fontSize.xs, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 0.5 },
-  statValue: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.textLight },
+  statValue: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.text },
 
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   card: {
     width: "31%", minWidth: 160, flex: 1,
-    backgroundColor: colors.bgDark,
+    backgroundColor: colors.card,
     borderRadius: radius.lg, padding: spacing.lg, gap: 10,
     borderWidth: 1, borderColor: "#1A2433",
   },
@@ -126,6 +126,6 @@ const s = StyleSheet.create({
     backgroundColor: "rgba(30,56,82,0.4)",
     alignItems: "center", justifyContent: "center",
   },
-  cardTitle: { fontSize: fontSize.md, fontWeight: fontWeight.semibold, color: colors.textLight },
+  cardTitle: { fontSize: fontSize.md, fontWeight: fontWeight.semibold, color: colors.text },
   cardDesc: { fontSize: fontSize.xs, color: colors.textMuted },
 });

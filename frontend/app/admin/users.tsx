@@ -85,22 +85,22 @@ export default function UserDirectory() {
 const s = StyleSheet.create({
   searchBox: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: colors.bgDark, borderRadius: radius.lg,
+    backgroundColor: colors.card, borderRadius: radius.lg,
     paddingHorizontal: 16, borderWidth: 1, borderColor: "#1A2433",
     marginBottom: spacing.md,
   },
-  searchInput: { flex: 1, paddingVertical: 14, fontSize: fontSize.sm, color: colors.textLight },
+  searchInput: { flex: 1, paddingVertical: 14, fontSize: fontSize.sm, color: colors.text },
 
-  pill: { paddingHorizontal: 16, paddingVertical: 7, borderRadius: radius.full, backgroundColor: colors.bgDark, marginRight: 8, borderWidth: 1, borderColor: "#1A2433" },
+  pill: { paddingHorizontal: 16, paddingVertical: 7, borderRadius: radius.full, backgroundColor: colors.card, marginRight: 8, borderWidth: 1, borderColor: "#1A2433" },
   pillActive: { backgroundColor: colors.accent, borderColor: colors.accent },
-  pillText: { color: colors.textLightSecondary, fontSize: fontSize.xs, fontWeight: fontWeight.medium, textTransform: "capitalize" },
+  pillText: { color: colors.textSecondary, fontSize: fontSize.xs, fontWeight: fontWeight.medium, textTransform: "capitalize" },
   pillTextActive: { color: "#fff" },
 
   count: { color: colors.textMuted, fontSize: fontSize.xs, marginBottom: spacing.md },
 
   row: {
     flexDirection: "row", alignItems: "center", gap: 14,
-    backgroundColor: colors.bgDark, borderRadius: radius.lg,
+    backgroundColor: colors.card, borderRadius: radius.lg,
     padding: spacing.md, marginBottom: 8,
     borderWidth: 1, borderColor: "#1A2433",
   },
@@ -110,7 +110,7 @@ const s = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   avatarT: { fontSize: 15, fontWeight: fontWeight.bold, color: colors.accentLight },
-  name: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: colors.textLight },
+  name: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: colors.text },
   code: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full },
   badgeT: { fontSize: 11, fontWeight: fontWeight.semibold },

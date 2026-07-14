@@ -59,13 +59,13 @@ export default function AdminDashboard() {
 
 const s = StyleSheet.create({
   header: { marginBottom: spacing.xl },
-  greeting: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.textLight },
-  subtitle: { fontSize: fontSize.sm, color: colors.textLightSecondary, marginTop: 4 },
+  greeting: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.text },
+  subtitle: { fontSize: fontSize.sm, color: colors.textSecondary, marginTop: 4 },
 
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 14 },
   card: {
     width: "47%", minWidth: 200, flex: 1,
-    backgroundColor: colors.bgDark,
+    backgroundColor: colors.card,
     borderRadius: radius.lg, padding: spacing.xl, gap: 12,
     borderWidth: 1, borderColor: "#1A2433",
   },
@@ -74,6 +74,6 @@ const s = StyleSheet.create({
     backgroundColor: "rgba(30,56,82,0.4)",
     alignItems: "center", justifyContent: "center",
   },
-  cardTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.semibold, color: colors.textLight },
+  cardTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.semibold, color: colors.text },
   cardDesc: { fontSize: fontSize.sm, color: colors.textMuted },
 });
