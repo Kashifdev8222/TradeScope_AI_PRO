@@ -48,14 +48,12 @@ export default function AdminLayout() {
       {isWide && <AdminSidebar />}
       <View style={s.content}>
         <Stack screenOptions={{
-          headerStyle: { backgroundColor: colors.bgDark },
-          headerTintColor: colors.textLight,
-          headerTitleStyle: { fontWeight: "600" },
+          headerShown: false,
           contentStyle: { backgroundColor: colors.bg },
         }}>
-          <Stack.Screen name="index" options={{ title: "Admin Console" }} />
-          <Stack.Screen name="users" options={{ title: "User Directory" }} />
-          <Stack.Screen name="users/[id]" options={{ title: "User Detail" }} />
+          <Stack.Screen name="index" />
+          <Stack.Screen name="users" />
+          <Stack.Screen name="users/[id]" />
         </Stack>
       </View>
       {!isWide && <AdminSidebar />}

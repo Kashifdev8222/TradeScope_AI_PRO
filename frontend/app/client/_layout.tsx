@@ -16,16 +16,14 @@ export default function ClientLayout() {
       {isWide && <ClientSidebar />}
       <View style={s.content}>
         <Stack screenOptions={{
-          headerStyle: { backgroundColor: colors.card },
-          headerTintColor: colors.text,
-          headerTitleStyle: { fontWeight: "600" },
+          headerShown: false,
           contentStyle: { backgroundColor: colors.bg },
         }}>
-          <Stack.Screen name="index" options={{ title: "Dashboard" }} />
-          <Stack.Screen name="profile" options={{ title: "Profile & KYC" }} />
-          <Stack.Screen name="accounts" options={{ title: "Trading Accounts" }} />
-          <Stack.Screen name="accounts/create" options={{ title: "New Account" }} />
-          <Stack.Screen name="kyc" options={{ title: "KYC Verification" }} />
+          <Stack.Screen name="index" />
+          <Stack.Screen name="profile" />
+          <Stack.Screen name="accounts" />
+          <Stack.Screen name="accounts/create" />
+          <Stack.Screen name="kyc" />
         </Stack>
       </View>
       {!isWide && <ClientSidebar />}

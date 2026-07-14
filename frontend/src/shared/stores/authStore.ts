@@ -1,6 +1,5 @@
 /**
- * TradeScope AI — Auth Store (Zustand)
- * Manages auth state: user profile, tokens, loading states.
+ * TradeScope AI — Auth Store (Zustand + localStorage persistence)
  */
 import { create } from "zustand";
 
@@ -27,19 +26,32 @@ export interface AuthTokens {
 }
 
 interface AuthState {
-  // State
   user: UserProfile | null;
   tokens: AuthTokens | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-
-  // Actions
   setAuth: (user: UserProfile, tokens: AuthTokens) => void;
   setTokens: (tokens: AuthTokens) => void;
   setUser: (user: UserProfile) => void;
   setLoading: (loading: boolean) => void;
   logout: () => void;
+  hydrate: () => void;
 }
+
+// localStorage keys
+const KEY_USER = "tradescope_user";
+const KEY_TOKENS = "tradescope_tokens";
+
+const loadFromStorage = () => {
+  try {
+    const u = localStorage.getItem(KEY_USER);
+    const t = localStorage.getItem(KEY_TOKENS);
+    if (u && t) {
+      return { user: JSON.parse(u), tokens: JSON.parse(t), isAuthenticated: true };
+    }
+  } catch {}
+  return { user: null, tokens: null, isAuthenticated: false };
+};
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
@@ -47,25 +59,36 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: true,
   isAuthenticated: false,
 
-  setAuth: (user, tokens) =>
-    set({
-      user,
-      tokens,
-      isAuthenticated: true,
-      isLoading: false,
-    }),
+  hydrate: () => {
+    const data = loadFromStorage();
+    set({ ...data, isLoading: false });
+  },
 
-  setTokens: (tokens) => set({ tokens }),
+  setAuth: (user, tokens) => {
+    try {
+      localStorage.setItem(KEY_USER, JSON.stringify(user));
+      localStorage.setItem(KEY_TOKENS, JSON.stringify(tokens));
+    } catch {}
+    set({ user, tokens, isAuthenticated: true, isLoading: false });
+  },
 
-  setUser: (user) => set({ user }),
+  setTokens: (tokens) => {
+    try { localStorage.setItem(KEY_TOKENS, JSON.stringify(tokens)); } catch {}
+    set({ tokens });
+  },
+
+  setUser: (user) => {
+    try { localStorage.setItem(KEY_USER, JSON.stringify(user)); } catch {}
+    set({ user });
+  },
 
   setLoading: (loading) => set({ isLoading: loading }),
 
-  logout: () =>
-    set({
-      user: null,
-      tokens: null,
-      isAuthenticated: false,
-      isLoading: false,
-    }),
+  logout: () => {
+    try {
+      localStorage.removeItem(KEY_USER);
+      localStorage.removeItem(KEY_TOKENS);
+    } catch {}
+    set({ user: null, tokens: null, isAuthenticated: false, isLoading: false });
+  },
 }));
