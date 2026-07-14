@@ -30,7 +30,7 @@ export default function KYCScreen() {
   const si = STATUS[sk] || STATUS.not_submitted;
 
   return (
-    <ScreenContainer max={900} scroll>
+    <ScreenContainer max={1400} scroll>
       <Text style={s.title}>Identity Verification</Text>
 
       {loading ? <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} /> : (

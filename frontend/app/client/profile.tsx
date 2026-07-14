@@ -16,7 +16,7 @@ export default function ProfileScreen() {
   if (!user) return null;
 
   return (
-    <ScreenContainer max={900} scroll>
+    <ScreenContainer max={1400} scroll>
       <Text style={s.pageTitle}>Profile & KYC</Text>
 
       {/* Profile Card */}

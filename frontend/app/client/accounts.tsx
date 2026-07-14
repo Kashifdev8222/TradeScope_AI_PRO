@@ -15,7 +15,7 @@ export default function AccountsScreen() {
   useEffect(() => { fetch(); }, []);
 
   return (
-    <ScreenContainer max={900} scroll>
+    <ScreenContainer max={1400} scroll>
       <View style={s.head}>
         <Text style={s.title}>Trading Accounts</Text>
         <TouchableOpacity style={s.addBtn} onPress={() => router.push("/client/accounts/create")} activeOpacity={0.7}>

@@ -11,7 +11,7 @@ export default function Dashboard() {
   const { width } = useWindowDimensions();
 
   return (
-    <ScreenContainer max={1100} scroll>
+    <ScreenContainer max={1400} scroll>
       {/* Header */}
       <View style={s.header}>
         <View>

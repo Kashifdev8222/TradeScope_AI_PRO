@@ -37,7 +37,7 @@ export default function CreateAccountScreen() {
   };
 
   return (
-    <ScreenContainer max={550} scroll>
+    <ScreenContainer max={800} scroll>
       <Text style={s.title}>Create Trading Account</Text>
 
       {error !== "" && <View style={s.err}><Ionicons name="alert-circle" size={15} color={colors.danger} /><Text style={s.errT}>{error}</Text></View>}

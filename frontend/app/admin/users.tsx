@@ -32,7 +32,7 @@ export default function UserDirectory() {
   useEffect(() => { fetch(1, filter, search); }, [filter]);
 
   return (
-    <ScreenContainer max={1100}>
+    <ScreenContainer max={1400}>
       <View style={s.top}>
         <Text style={s.title}>User Directory</Text>
         <Text style={s.count}>{total} users</Text>

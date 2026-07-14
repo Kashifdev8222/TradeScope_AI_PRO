@@ -13,7 +13,7 @@ export default function UserDetailScreen() {
   if (loading) return <ScreenContainer max={600}><View style={s.ctr}><ActivityIndicator color={colors.accent} size="large" /></View></ScreenContainer>;
   if (!d) return <ScreenContainer max={600}><View style={s.ctr}><Text style={{ color: colors.danger }}>Not found</Text></View></ScreenContainer>;
   const p = d.profile; const sc = SC[p.status] || colors.textMuted;
-  return (<ScreenContainer max={650} scroll>
+  return (<ScreenContainer max={1400} scroll>
     <View style={s.top}><View style={s.av}><Ionicons name="person" size={30} color={colors.accent} /></View><Text style={s.nm}>{p.full_name}</Text><Text style={s.cd}>{p.client_code}</Text><View style={s.sr}><View style={[s.sb, { borderColor: sc }]}><View style={[s.sd, { backgroundColor: sc }]} /><Text style={[s.st, { color: sc }]}>{p.status}</Text></View><Text style={s.kyc}>KYC: {p.kyc_status || "not_submitted"}</Text></View></View>
     <View style={s.sc}><Text style={s.stt}>Details</Text><IR i="mail-outline" l="Email" v={p.email || "—"} /><IR i="call-outline" l="Phone" v={p.phone || "—"} /><IR i="globe-outline" l="Country" v={p.country || "—"} /><IR i="cash-outline" l="Currency" v={p.base_currency} /><IR i="calendar-outline" l="Joined" v={p.created_at ? new Date(p.created_at).toLocaleDateString() : "—"} last /></View>
     <View style={s.sc}><Text style={s.stt}>Roles</Text>{d.roles.length === 0 ? <Text style={s.emp}>Client only</Text> : d.roles.map(r => <View key={r.role_id} style={s.rp}><Ionicons name="shield-checkmark" size={12} color={colors.accent} /><Text style={s.rt}>{r.name}</Text></View>)}</View>

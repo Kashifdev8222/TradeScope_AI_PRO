@@ -15,7 +15,7 @@ export default function AdminDashboard() {
   const roles = d?.roles?.map(r => r.name).join(", ") || "";
 
   return (
-    <ScreenContainer max={1100} scroll>
+    <ScreenContainer max={1400} scroll>
       <View style={s.header}>
         <Text style={s.greeting}>Admin Console</Text>
         <Text style={s.subtitle}>Manage users and monitor the platform</Text>
