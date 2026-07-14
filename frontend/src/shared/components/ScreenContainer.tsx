@@ -1,21 +1,19 @@
 import React from "react";
-import { View, ScrollView, StyleSheet, ViewStyle, useWindowDimensions } from "react-native";
+import { View, ScrollView, StyleSheet, ViewStyle } from "react-native";
 import { colors } from "../theme";
 
 interface Props { children: React.ReactNode; max?: number; scroll?: boolean; style?: ViewStyle; contentStyle?: ViewStyle; padded?: boolean; }
 
-export default function ScreenContainer({ children, max = 900, scroll = false, style, contentStyle, padded = true }: Props) {
-  const { width } = useWindowDimensions();
+export default function ScreenContainer({ children, max, scroll = false, style, contentStyle, padded = true }: Props) {
+  const Wrapper = scroll ? ScrollView : View;
   return (
-    <View style={[s.base, style]}>
-      {scroll ? (
-        <ScrollView contentContainerStyle={[s.inner, padded && { padding: 24 }, { width: "100%", maxWidth: max }, contentStyle]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          {children}
-        </ScrollView>
-      ) : (
-        <View style={[s.inner, padded && { padding: 24 }, { width: "100%", maxWidth: max, flex: 1 }, contentStyle]}>{children}</View>
-      )}
-    </View>
+    <Wrapper
+      style={[{ flex: 1, backgroundColor: colors.bg }, style]}
+      contentContainerStyle={scroll ? [padded && { padding: 24 }, contentStyle] : undefined}
+    >
+      <View style={[{ flex: 1 }, padded && !scroll && { padding: 24 }, contentStyle]}>
+        {children}
+      </View>
+    </Wrapper>
   );
 }
-const s = StyleSheet.create({ base: { flex: 1, backgroundColor: colors.bg, alignItems: "center" }, inner: { alignSelf: "center" } });
