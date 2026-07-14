@@ -1,6 +1,3 @@
-/**
- * AdminSidebar — Navigation sidebar for the admin zone.
- */
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, ScrollView } from "react-native";
 import { useRouter, usePathname } from "expo-router";
@@ -18,9 +15,7 @@ export default function AdminSidebar() {
   const [detail, setDetail] = useState<AdminUserDetail | null>(null);
   const isWide = width >= 768;
 
-  useEffect(() => {
-    adminApi.me().then(setDetail).catch(() => {});
-  }, []);
+  useEffect(() => { adminApi.me().then(setDetail).catch(() => {}); }, []);
 
   const doLogout = async () => {
     try { await authApi.logout(); } catch {}
@@ -29,70 +24,73 @@ export default function AdminSidebar() {
 
   const roles = detail?.roles?.map(r => r.name).join(", ") || "";
 
-  const navItems = [
-    { icon: "grid-outline", label: "Dashboard", href: "/admin" },
-    { icon: "people-outline", label: "Users", href: "/admin/users" },
-  ];
-
-  // Mobile: bottom tabs
   if (!isWide) {
     return (
-      <View style={mob.wrap}>
-        {navItems.map(item => {
-          const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
-          return (
-            <TouchableOpacity key={item.href} style={mob.tab} onPress={() => router.push(item.href as any)}>
-              <Ionicons name={item.icon as any} size={20} color={active ? colors.accent : colors.textMuted} />
-              <Text style={[mob.tabT, active && { color: colors.accent }]}>{item.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
+      <View style={mob.bar}>
+        <TouchableOpacity style={mob.tab} onPress={() => router.push("/admin")}>
+          <Ionicons name="grid-outline" size={21} color={pathname === "/admin" ? colors.accent : colors.textMuted} />
+        </TouchableOpacity>
+        <TouchableOpacity style={mob.tab} onPress={() => router.push("/admin/users")}>
+          <Ionicons name="people-outline" size={21} color={pathname.startsWith("/admin/users") ? colors.accent : colors.textMuted} />
+        </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={s.wrap}>
-      {/* Logo */}
-      <View style={s.logoRow}>
-        <View style={s.logoBox}><Ionicons name="shield-checkmark" size={18} color="#fff" /></View>
-        <Text style={s.logoText}>Admin</Text>
-      </View>
+    <View style={s.root}>
+      {/* Header */}
+      <TouchableOpacity style={s.brand} onPress={() => router.push("/client")}>
+        <View style={s.brandIcon}>
+          <Ionicons name="shield-checkmark" size={22} color="#fff" />
+        </View>
+        <View>
+          <Text style={s.brandName}>Admin Panel</Text>
+          <Text style={s.brandVer}>TradeScope AI</Text>
+        </View>
+      </TouchableOpacity>
 
-      {/* Admin info */}
-      <View style={s.userBox}>
-        <View style={s.avatar}><Ionicons name="person" size={18} color={colors.accent} /></View>
+      <View style={s.user}>
+        <View style={s.avatar}>
+          <Text style={s.avatarText}>{(user?.full_name || "A")[0].toUpperCase()}</Text>
+        </View>
         <View style={{ flex: 1 }}>
           <Text style={s.userName} numberOfLines={1}>{user?.full_name ?? "Admin"}</Text>
-          <Text style={s.userRole} numberOfLines={1}>{roles}</Text>
+          <Text style={s.userRole} numberOfLines={1}>{roles || "Admin"}</Text>
         </View>
       </View>
 
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-        {navItems.map(item => {
-          const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
-          return (
-            <TouchableOpacity key={item.href} style={[s.navItem, active && s.navItemActive]} onPress={() => router.push(item.href as any)}>
-              <Ionicons name={item.icon as any} size={20} color={active ? colors.accent : colors.textMuted} />
-              <Text style={[s.navLabel, active && { color: colors.accent, fontWeight: fontWeight.semibold }]}>{item.label}</Text>
-              {active && <View style={s.activeDot} />}
-            </TouchableOpacity>
-          );
-        })}
+        <Text style={s.sectionLabel}>MANAGEMENT</Text>
+        <NavItem icon="grid-outline" label="Dashboard" href="/admin" pathname={pathname} router={router} />
+        <NavItem icon="people-outline" label="Users" href="/admin/users" pathname={pathname} router={router} />
 
-        <View style={s.divider} />
-        <Text style={s.sectionLabel}>Coming Soon</Text>
-        <View style={s.navItemDisabled}><Ionicons name="cash-outline" size={20} color={colors.textMuted} /><Text style={s.navLabelDisabled}>Finance</Text></View>
-        <View style={s.navItemDisabled}><Ionicons name="hardware-chip-outline" size={20} color={colors.textMuted} /><Text style={s.navLabelDisabled}>AI Control</Text></View>
-        <View style={s.navItemDisabled}><Ionicons name="settings-outline" size={20} color={colors.textMuted} /><Text style={s.navLabelDisabled}>Settings</Text></View>
+        <Text style={[s.sectionLabel, { marginTop: spacing.lg }]}>COMING SOON</Text>
+        <View style={s.navDisabled}>
+          <View style={s.navIcon}>
+            <Ionicons name="cash-outline" size={18} color={colors.textMuted} />
+          </View>
+          <Text style={s.navTextDisabled}>Finance</Text>
+        </View>
+        <View style={s.navDisabled}>
+          <View style={s.navIcon}>
+            <Ionicons name="hardware-chip-outline" size={18} color={colors.textMuted} />
+          </View>
+          <Text style={s.navTextDisabled}>AI Control</Text>
+        </View>
+        <View style={s.navDisabled}>
+          <View style={s.navIcon}>
+            <Ionicons name="settings-outline" size={18} color={colors.textMuted} />
+          </View>
+          <Text style={s.navTextDisabled}>Settings</Text>
+        </View>
       </ScrollView>
 
-      {/* Back to client + Logout */}
-      <TouchableOpacity style={s.backBtn} onPress={() => router.push("/client")}>
+      <TouchableOpacity style={s.back} onPress={() => router.push("/client")}>
         <Ionicons name="arrow-back-outline" size={18} color={colors.textMuted} />
         <Text style={s.backText}>Back to Client</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={s.logoutBtn} onPress={doLogout}>
+      <TouchableOpacity style={s.logout} onPress={doLogout}>
         <Ionicons name="log-out-outline" size={18} color={colors.danger} />
         <Text style={s.logoutText}>Sign Out</Text>
       </TouchableOpacity>
@@ -100,36 +98,51 @@ export default function AdminSidebar() {
   );
 }
 
+function NavItem({ icon, label, href, pathname, router }: any) {
+  const active = pathname === href || (href !== "/admin" && pathname.startsWith(href));
+  return (
+    <TouchableOpacity style={[s.nav, active && s.navActive]} onPress={() => router.push(href)}>
+      <View style={[s.navIcon, active && s.navIconActive]}>
+        <Ionicons name={icon} size={18} color={active ? "#fff" : colors.textMuted} />
+      </View>
+      <Text style={[s.navText, active && s.navTextActive]}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
 const s = StyleSheet.create({
-  wrap: { width: 240, backgroundColor: colors.bgDark, paddingVertical: spacing.lg, borderRightWidth: 1, borderRightColor: colors.border },
-  logoRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.lg, marginBottom: spacing.lg },
-  logoBox: { width: 30, height: 30, borderRadius: radius.sm, backgroundColor: colors.warning, alignItems: "center", justifyContent: "center" },
-  logoText: { fontSize: fontSize.md, fontWeight: fontWeight.bold, color: colors.textLight },
+  root: { width: 250, backgroundColor: colors.bgDark, paddingTop: spacing.lg, borderRightWidth: 1, borderRightColor: "#1A2433" },
 
-  userBox: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginHorizontal: spacing.md, padding: spacing.md, backgroundColor: colors.bg, borderRadius: radius.lg, marginBottom: spacing.lg },
-  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.accentBg, alignItems: "center", justifyContent: "center" },
+  brand: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, borderBottomWidth: 1, borderBottomColor: "#1A2433" },
+  brandIcon: { width: 36, height: 36, borderRadius: radius.md, backgroundColor: colors.warning, alignItems: "center", justifyContent: "center" },
+  brandName: { fontSize: 16, fontWeight: fontWeight.bold, color: colors.textLight },
+  brandVer: { fontSize: 10, color: colors.textMuted, marginTop: 1 },
+
+  user: { flexDirection: "row", alignItems: "center", gap: 12, padding: spacing.lg, borderBottomWidth: 1, borderBottomColor: "#1A2433" },
+  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.warning, alignItems: "center", justifyContent: "center" },
+  avatarText: { fontSize: 16, fontWeight: fontWeight.bold, color: "#fff" },
   userName: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: colors.textLight },
-  userRole: { fontSize: fontSize.xs, color: colors.warning, marginTop: 1 },
+  userRole: { fontSize: 11, color: colors.warning, marginTop: 1 },
 
-  navItem: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 12, paddingHorizontal: spacing.lg, marginHorizontal: spacing.sm, borderRadius: radius.md, marginBottom: 2 },
-  navItemActive: { backgroundColor: colors.accentBg },
-  navLabel: { fontSize: fontSize.sm, color: colors.textLightSecondary, flex: 1 },
-  activeDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.accent },
+  sectionLabel: { fontSize: 10, fontWeight: fontWeight.semibold, color: colors.textMuted, letterSpacing: 1.5, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm },
 
-  navItemDisabled: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 12, paddingHorizontal: spacing.lg, marginHorizontal: spacing.sm, opacity: 0.35 },
-  navLabelDisabled: { fontSize: fontSize.sm, color: colors.textMuted, flex: 1 },
+  nav: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, paddingHorizontal: spacing.lg, marginHorizontal: spacing.sm, borderRadius: radius.md, marginBottom: 2 },
+  navActive: { backgroundColor: "rgba(30,56,82,0.5)" },
+  navIcon: { width: 32, height: 32, borderRadius: radius.sm, backgroundColor: "rgba(255,255,255,0.05)", alignItems: "center", justifyContent: "center" },
+  navIconActive: { backgroundColor: colors.accent },
+  navText: { fontSize: fontSize.sm, color: colors.textLightSecondary, flex: 1 },
+  navTextActive: { color: colors.textLight, fontWeight: fontWeight.semibold },
 
-  divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.sm, marginHorizontal: spacing.lg },
-  sectionLabel: { fontSize: fontSize.xs, color: colors.textMuted, letterSpacing: 1, paddingHorizontal: spacing.lg, marginBottom: spacing.sm, textTransform: "uppercase" },
+  navDisabled: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, paddingHorizontal: spacing.lg, marginHorizontal: spacing.sm, opacity: 0.3 },
+  navTextDisabled: { fontSize: fontSize.sm, color: colors.textMuted, flex: 1 },
 
-  backBtn: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, paddingHorizontal: spacing.lg, marginHorizontal: spacing.sm },
+  back: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: spacing.lg, borderTopWidth: 1, borderTopColor: "#1A2433" },
   backText: { fontSize: fontSize.sm, color: colors.textMuted },
-  logoutBtn: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, paddingHorizontal: spacing.lg, marginHorizontal: spacing.sm },
+  logout: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: spacing.lg },
   logoutText: { fontSize: fontSize.sm, color: colors.danger, fontWeight: fontWeight.medium },
 });
 
 const mob = StyleSheet.create({
-  wrap: { flexDirection: "row", backgroundColor: colors.bgDark, borderTopWidth: 1, borderTopColor: colors.border, paddingBottom: 20, paddingTop: spacing.sm },
-  tab: { flex: 1, alignItems: "center", justifyContent: "center", gap: 2, paddingVertical: spacing.xs },
-  tabT: { fontSize: 10, color: colors.textMuted },
+  bar: { flexDirection: "row", backgroundColor: colors.bgDark, borderTopWidth: 1, borderTopColor: "#1A2433", paddingBottom: 20, paddingTop: spacing.sm },
+  tab: { flex: 1, alignItems: "center", paddingVertical: 8 },
 });

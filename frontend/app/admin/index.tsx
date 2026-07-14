@@ -1,48 +1,56 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { adminApi, AdminUserDetail } from "../../src/shared/api";
 import ScreenContainer from "../../src/shared/components/ScreenContainer";
 import { colors, spacing, radius, fontSize, fontWeight } from "../../src/shared/theme";
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [d, setD] = useState<AdminUserDetail | null>(null);
 
-  useEffect(() => {
-    adminApi.me().then(setD).catch(() => {});
-  }, []);
-
-  const roles = d?.roles?.map(r => r.name).join(", ") || "";
+  useEffect(() => { adminApi.me().then(setD).catch(() => {}); }, []);
 
   return (
-    <ScreenContainer max={900} scroll>
-      <View style={s.welcome}>
+    <ScreenContainer max={960} scroll>
+      <View style={s.header}>
         <Text style={s.greeting}>Admin Console</Text>
-        <Text style={s.subtitle}>Manage users, finance, AI, and platform settings</Text>
+        <Text style={s.subtitle}>Manage users, monitor the platform</Text>
       </View>
 
-      <View style={s.statsRow}>
-        <View style={s.stat}>
-          <Ionicons name="people-outline" size={20} color={colors.accent} />
-          <Text style={s.statV}>—</Text>
-          <Text style={s.statL}>Total Users</Text>
-        </View>
-        <View style={s.stat}>
-          <Ionicons name="wallet-outline" size={20} color={colors.success} />
-          <Text style={s.statV}>$0.00</Text>
-          <Text style={s.statL}>Total AUM</Text>
-        </View>
-        <View style={s.stat}>
-          <Ionicons name="shield-checkmark-outline" size={20} color={colors.warning} />
-          <Text style={s.statV}>{roles || "—"}</Text>
-          <Text style={s.statL}>Your Roles</Text>
-        </View>
-      </View>
+      <View style={s.grid}>
+        <TouchableOpacity style={s.card} onPress={() => router.push("/admin/users")} activeOpacity={0.7}>
+          <View style={s.cardIcon}>
+            <Ionicons name="people-outline" size={24} color={colors.accent} />
+          </View>
+          <Text style={s.cardTitle}>User Directory</Text>
+          <Text style={s.cardDesc}>View, search, and manage all users</Text>
+        </TouchableOpacity>
 
-      <View style={s.placeholder}>
-        <Ionicons name="analytics-outline" size={40} color={colors.textMuted} />
-        <Text style={s.phT}>Finance & Risk dashboards coming in later modules</Text>
-        <Text style={s.phS}>Use the sidebar to manage users</Text>
+        <View style={[s.card, { opacity: 0.35 }]}>
+          <View style={[s.cardIcon, { backgroundColor: colors.bgDark }]}>
+            <Ionicons name="cash-outline" size={24} color={colors.textMuted} />
+          </View>
+          <Text style={s.cardTitle}>Finance</Text>
+          <Text style={s.cardDesc}>Module 11-12</Text>
+        </View>
+
+        <View style={[s.card, { opacity: 0.35 }]}>
+          <View style={[s.cardIcon, { backgroundColor: colors.bgDark }]}>
+            <Ionicons name="hardware-chip-outline" size={24} color={colors.textMuted} />
+          </View>
+          <Text style={s.cardTitle}>AI Control</Text>
+          <Text style={s.cardDesc}>Module 9-10</Text>
+        </View>
+
+        <View style={[s.card, { opacity: 0.35 }]}>
+          <View style={[s.cardIcon, { backgroundColor: colors.bgDark }]}>
+            <Ionicons name="settings-outline" size={24} color={colors.textMuted} />
+          </View>
+          <Text style={s.cardTitle}>Settings</Text>
+          <Text style={s.cardDesc}>Module 16</Text>
+        </View>
       </View>
       <View style={{ height: 40 }} />
     </ScreenContainer>
@@ -50,16 +58,22 @@ export default function AdminDashboard() {
 }
 
 const s = StyleSheet.create({
-  welcome: { marginBottom: spacing.lg },
-  greeting: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.text },
-  subtitle: { fontSize: fontSize.sm, color: colors.textSecondary, marginTop: spacing.xs },
+  header: { marginBottom: spacing.xl },
+  greeting: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.textLight },
+  subtitle: { fontSize: fontSize.sm, color: colors.textLightSecondary, marginTop: 4 },
 
-  statsRow: { flexDirection: "row", gap: 10, marginBottom: spacing.xl },
-  stat: { flex: 1, backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.md, gap: 4, borderWidth: 1, borderColor: colors.cardBorder },
-  statV: { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: colors.text },
-  statL: { fontSize: fontSize.xs, color: colors.textMuted },
-
-  placeholder: { alignItems: "center", paddingVertical: spacing.xxl, backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.cardBorder, gap: spacing.sm },
-  phT: { fontSize: fontSize.sm, color: colors.textMuted, textAlign: "center" },
-  phS: { fontSize: fontSize.xs, color: colors.textMuted },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 14 },
+  card: {
+    width: "47%", minWidth: 200, flex: 1,
+    backgroundColor: colors.bgDark,
+    borderRadius: radius.lg, padding: spacing.xl, gap: 12,
+    borderWidth: 1, borderColor: "#1A2433",
+  },
+  cardIcon: {
+    width: 48, height: 48, borderRadius: radius.md,
+    backgroundColor: "rgba(30,56,82,0.4)",
+    alignItems: "center", justifyContent: "center",
+  },
+  cardTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.semibold, color: colors.textLight },
+  cardDesc: { fontSize: fontSize.sm, color: colors.textMuted },
 });
