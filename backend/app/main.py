@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.routers import auth, client, admin
+from app.middleware.rate_limit import rate_limit_middleware
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -12,6 +13,11 @@ app = FastAPI(
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
 )
+
+# ---------------------------------------------------------------------------
+# Rate Limiting (applied before CORS)
+# ---------------------------------------------------------------------------
+app.middleware("http")(rate_limit_middleware)
 
 # ---------------------------------------------------------------------------
 # CORS

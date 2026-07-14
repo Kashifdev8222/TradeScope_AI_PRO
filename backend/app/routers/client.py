@@ -92,3 +92,29 @@ async def update_profile(
         "created_at": profile.get("created_at"),
         "updated_at": profile.get("updated_at"),
     }
+
+
+# ---------------------------------------------------------------------------
+# POST /client/accept-terms
+# ---------------------------------------------------------------------------
+@router.post("/accept-terms")
+async def accept_terms(
+    body: dict,
+    auth_user_id: str = Depends(get_current_user_id),
+    db_client: Client = Depends(get_supabase_db),
+):
+    """
+    Record acceptance of terms and/or risk disclosure.
+    Expected body: {"terms_version": "1.0", "risk_disclosure_version": "1.0"}
+    """
+    updates = {}
+    if "terms_version" in body:
+        updates["terms_version"] = body["terms_version"]
+    if "risk_disclosure_version" in body:
+        updates["risk_disclosure_version"] = body["risk_disclosure_version"]
+
+    if not updates:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No version provided")
+
+    db_client.table("user_profiles").update(updates).eq("auth_user_id", auth_user_id).execute()
+    return {"message": "Terms accepted", **updates}

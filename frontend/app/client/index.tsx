@@ -1,17 +1,35 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native"; import { useRouter } from "expo-router"; import { Ionicons } from "@expo/vector-icons";
-import { useAuthStore } from "../../src/shared/stores/authStore"; import { authApi } from "../../src/shared/api";
+import { useEffect, useState } from "react";
+import { useAuthStore } from "../../src/shared/stores/authStore"; import { authApi, adminApi } from "../../src/shared/api";
 import ScreenContainer from "../../src/shared/components/ScreenContainer"; import { colors, spacing, radius, fontSize, fontWeight } from "../../src/shared/theme";
 
 export default function Dashboard() {
   const router = useRouter(); const user = useAuthStore((s) => s.user); const logout = useAuthStore((s) => s.logout);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    // Check if user has admin role
+    adminApi.me().then(() => setIsAdmin(true)).catch(() => setIsAdmin(false));
+  }, []);
+
   return (<ScreenContainer max={800} scroll>
     <View style={s.top}><View style={{ flex: 1 }}><Text style={s.g}>Welcome, {user?.full_name?.split(" ")[0] ?? "Trader"}</Text><Text style={s.cd}>{user?.client_code}</Text></View><View style={s.sts}><View style={s.sd} /><Text style={s.st}>{user?.status ?? "active"}</Text></View></View>
     <View style={s.ss}><SB i="wallet-outline" l="Balance" v="$0.00" /><SB i="pie-chart-outline" l="Equity" v="$0.00" /><SB i="trending-up-outline" l="P/L Today" v="$0.00" /></View>
     <N i="person-outline" t="Profile & KYC" s="Manage details and verification" onPress={() => router.push("/client/profile")} />
     <Text style={s.lbl}>Coming Soon</Text><ND i="bar-chart-outline" t="Portfolio & Charts" s="Module 8" /><ND i="stats-chart-outline" t="Web Trader" s="Module 5" />
-    <TouchableOpacity style={s.adm} onPress={() => router.push("/admin")}><Ionicons name="shield-outline" size={16} color={colors.accent} /><Text style={s.admT}>Admin Console</Text></TouchableOpacity>
-    <TouchableOpacity style={s.out} onPress={async () => { try { await authApi.logout(); } catch {} logout(); router.replace("/login"); }}><Ionicons name="log-out-outline" size={16} color={colors.danger} /><Text style={s.outT}>Sign Out</Text></TouchableOpacity>
-    <View style={{ height: 40 }} /></ScreenContainer>); }
+
+    {/* Admin button — only visible for admin users */}
+    {isAdmin && (
+      <TouchableOpacity style={s.adm} onPress={() => router.push("/admin")}>
+        <Ionicons name="shield-outline" size={16} color={colors.accent} /><Text style={s.admT}>Admin Console</Text>
+      </TouchableOpacity>
+    )}
+
+    <TouchableOpacity style={s.out} onPress={async () => { try { await authApi.logout(); } catch {} logout(); router.replace("/login"); }}>
+      <Ionicons name="log-out-outline" size={16} color={colors.danger} /><Text style={s.outT}>Sign Out</Text>
+    </TouchableOpacity>
+    <View style={{ height: 40 }} /></ScreenContainer>);
+}
 function SB({ i, l, v }: any) { return <View style={s.sb}><Ionicons name={i} size={15} color={colors.accent} /><Text style={s.sl}>{l}</Text><Text style={s.sv}>{v}</Text></View>; }
 function N({ i, t, s: sub, onPress }: any) { return <TouchableOpacity style={s.n} onPress={onPress}><View style={s.ni}><Ionicons name={i} size={19} color={colors.accent} /></View><View style={{ flex: 1 }}><Text style={s.nt}>{t}</Text><Text style={s.ns}>{sub}</Text></View><Ionicons name="chevron-forward" size={16} color={colors.textMuted} /></TouchableOpacity>; }
 function ND({ i, t, s: sub }: any) { return <View style={[s.n, { opacity: 0.45 }]}><View style={[s.ni, { backgroundColor: "#F3F4F6" }]}><Ionicons name={i} size={19} color={colors.textMuted} /></View><View style={{ flex: 1 }}><Text style={[s.nt, { color: colors.textSecondary }]}>{t}</Text><Text style={s.ns}>{sub}</Text></View></View>; }
