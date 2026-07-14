@@ -196,11 +196,11 @@ async def assign_role_to_user(
 # ---------------------------------------------------------------------------
 @router.get("/me")
 async def admin_me(
-    profile_id: str = Depends(get_profile_id),
+    profile_id: str = Depends(require_admin()),
     db_client: Client = Depends(get_supabase_db),
     auth_client: Client = Depends(get_supabase_auth),
 ):
-    """Get current admin's profile + roles."""
+    """Get current admin's profile + roles. Only works for admin users."""
     try:
         detail = await admin_service.get_user_detail(db_client, auth_client, profile_id)
         return detail
