@@ -51,6 +51,7 @@ export default function RegisterScreen() {
   const [cpOpen, setCpOpen] = useState(false); const [cpSearch, setCpSearch] = useState("");
   const [password, setPassword] = useState(""); const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false); const [errors, setErrors] = useState<Record<string, string>>({});
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const filtered = cpSearch.trim() === "" ? ALL : ALL.filter(c =>
     c.name.toLowerCase().includes(cpSearch.toLowerCase()) || c.dial.includes(cpSearch) || c.code.toLowerCase().includes(cpSearch.toLowerCase())
@@ -65,6 +66,7 @@ export default function RegisterScreen() {
     else if (!EMAIL_RE.test(email.trim())) e.email = "Enter a valid email address";
     if (!password) e.password = "Password is required";
     else if (password.length < 8) e.password = "At least 8 characters required";
+    if (!acceptedTerms) e.terms = "You must accept the Terms and Risk Disclosure";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -146,6 +148,18 @@ export default function RegisterScreen() {
           {errors.password && <Text style={s.err}>{errors.password}</Text>}
         </View>
 
+        {/* Terms & Risk Disclosure Acceptance */}
+        <TouchableOpacity style={s.termsRow} onPress={() => { setAcceptedTerms(!acceptedTerms); setErrors({}); }} activeOpacity={0.7}>
+          <View style={[s.checkbox, acceptedTerms && s.checkboxChecked]}>
+            {acceptedTerms && <Ionicons name="checkmark" size={14} color="#fff" />}
+          </View>
+          <Text style={s.termsText}>
+            I accept the <Text style={s.termsLink}>Terms of Service</Text> and{"\n"}
+            <Text style={s.termsLink}>Risk Disclosure</Text> (v1.0)
+          </Text>
+        </TouchableOpacity>
+        {errors.terms && <Text style={[s.err, { marginTop: 4 }]}>{errors.terms}</Text>}
+
         <TouchableOpacity style={[s.btn, loading && { opacity: 0.7 }]} onPress={handle} disabled={loading} activeOpacity={0.8}>
           {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.btnT}>Create Account</Text>}
         </TouchableOpacity>
@@ -184,4 +198,11 @@ const s = StyleSheet.create({
 
   btn: { backgroundColor: colors.accent, borderRadius: radius.md, paddingVertical: 16, alignItems: "center", marginTop: spacing.sm },
   btnT: { color: "#fff", fontSize: fontSize.md, fontWeight: fontWeight.semibold },
+
+  // Terms checkbox
+  termsRow: { flexDirection: "row", alignItems: "flex-start", gap: 12, marginTop: spacing.lg, marginBottom: spacing.sm },
+  checkbox: { width: 22, height: 22, borderRadius: radius.sm, borderWidth: 2, borderColor: colors.inputBorder, alignItems: "center", justifyContent: "center", marginTop: 1 },
+  checkboxChecked: { backgroundColor: colors.accent, borderColor: colors.accent },
+  termsText: { fontSize: fontSize.xs, color: colors.textSecondary, flex: 1, lineHeight: 18 },
+  termsLink: { color: colors.accent, fontWeight: fontWeight.medium },
 });
