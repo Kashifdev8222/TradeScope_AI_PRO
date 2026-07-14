@@ -5,7 +5,7 @@ Endpoints: /api/v1/client/*
 from fastapi import APIRouter, Depends, HTTPException, status
 from supabase import Client
 
-from app.dependencies import get_supabase_auth, get_supabase_db, get_current_user_id
+from app.dependencies import get_supabase_auth, get_supabase_db, get_current_user_id, get_profile_id
 from app.schemas.auth import UserProfileResponse
 from app.services import auth_service
 
