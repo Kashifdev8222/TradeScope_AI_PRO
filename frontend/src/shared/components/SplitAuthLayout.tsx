@@ -160,7 +160,7 @@ const s = StyleSheet.create({
     overflow: "visible" as any,
   },
   formHead: { alignItems: "center", marginBottom: spacing.xl },
-  formIcon: { width: 54, height: 54, borderRadius: 27, backgroundColor: "rgba(30,56,82,0.08)", alignItems: "center", justifyContent: "center", marginBottom: spacing.md },
+  formIcon: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.accentBg, alignItems: "center", justifyContent: "center", marginBottom: spacing.md },
   formTitle: { fontSize: fontSize.xxl, fontWeight: fontWeight.bold, color: colors.text },
   formSub: { fontSize: fontSize.sm, color: colors.textSecondary, marginTop: spacing.xs },
 
