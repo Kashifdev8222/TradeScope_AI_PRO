@@ -9,9 +9,9 @@ export default function ScreenContainer({ children, max, scroll = false, style, 
   return (
     <Wrapper
       style={[{ flex: 1, backgroundColor: colors.bg }, style]}
-      contentContainerStyle={scroll ? [padded && { padding: 24 }, contentStyle] : undefined}
+      contentContainerStyle={scroll ? [padded && { padding: 32 }, contentStyle] : undefined}
     >
-      <View style={[{ flex: 1 }, padded && !scroll && { padding: 24 }, contentStyle]}>
+      <View style={[{ flex: 1 }, padded && !scroll && { padding: 32 }, contentStyle]}>
         {children}
       </View>
     </Wrapper>
