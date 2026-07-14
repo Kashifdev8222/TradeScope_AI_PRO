@@ -118,3 +118,21 @@ async def accept_terms(
 
     db_client.table("user_profiles").update(updates).eq("auth_user_id", auth_user_id).execute()
     return {"message": "Terms accepted", **updates}
+
+
+# ---------------------------------------------------------------------------
+# GET /client/is-admin
+# ---------------------------------------------------------------------------
+@router.get("/is-admin")
+async def check_is_admin(
+    profile_id: str = Depends(get_profile_id),
+    db_client: Client = Depends(get_supabase_db),
+):
+    """Check if the current user has any admin role. Always returns 200."""
+    result = (
+        db_client.table("user_roles")
+        .select("id")
+        .eq("user_id", profile_id)
+        .execute()
+    )
+    return {"is_admin": len(result.data) > 0 if result.data else False}

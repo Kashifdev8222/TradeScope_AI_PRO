@@ -98,6 +98,8 @@ export const authApi = {
 
   getProfile: () => request<import("../stores/authStore").UserProfile>("/client/profile"),
 
+  isAdmin: () => request<{ is_admin: boolean }>("/client/is-admin"),
+
   updateProfile: (data: Record<string, any>) =>
     request<import("../stores/authStore").UserProfile>("/client/profile", {
       method: "PATCH",

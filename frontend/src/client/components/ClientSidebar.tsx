@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, ScrollVi
 import { useRouter, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../shared/stores/authStore";
-import { authApi, adminApi } from "../../shared/api";
+import { authApi } from "../../shared/api";
 import { colors, spacing, radius, fontSize, fontWeight } from "../../shared/theme";
 
 interface NavItem {
@@ -29,7 +29,7 @@ export default function ClientSidebar() {
   const isWide = width >= 768;
 
   useEffect(() => {
-    adminApi.me().then(() => setIsAdmin(true)).catch(() => {});
+    authApi.isAdmin().then(r => setIsAdmin(r.is_admin)).catch(() => {});
   }, []);
 
   const doLogout = async () => {
