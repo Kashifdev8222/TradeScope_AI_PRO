@@ -29,11 +29,17 @@ export default function AdminKYCScreen() {
   };
   useFocusEffect(useCallback(() => { fetchKycs(); }, [filter]));
 
+  const [detailLoading, setDetailLoading] = useState(false);
+
   const viewDetail = async (kycId: string) => {
+    setDetailLoading(true); setDetail(null);
     try {
       const res = await fetch(`${API}/admin/kyc/${kycId}`, { headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) { setDetail(await res.json()); setReason(""); }
-    } catch {}
+      const data = await res.json();
+      console.log("KYC detail response:", JSON.stringify(data).substring(0, 500));
+      if (res.ok) { setDetail(data); setReason(""); }
+    } catch (e) { console.error(e); }
+    finally { setDetailLoading(false); }
   };
 
   const doAction = async (kycId: string, action: "approve" | "reject") => {
@@ -103,8 +109,10 @@ export default function AdminKYCScreen() {
             </View>
 
             <ScrollView style={s.modalBody} showsVerticalScrollIndicator={true}>
-              {/* User info */}
-              <View style={s.userInfo}>
+              {detailLoading ? (
+                <ActivityIndicator color={colors.accent} style={{ padding: 40 }} />
+              ) : (
+              <><View style={s.userInfo}>
                 <Info label="Name" value={detail?.kyc?.user_profiles?.full_name} />
                 <Info label="Email" value={detail?.kyc?.user_profiles?.email} />
                 <Info label="Phone" value={detail?.kyc?.user_profiles?.phone || "—"} />
@@ -159,6 +167,7 @@ export default function AdminKYCScreen() {
                   <Text style={{ color: "#fff", fontWeight: fontWeight.semibold }}>Approve</Text>
                 </TouchableOpacity>
               </View>
+              </>)}
             </ScrollView>
           </View>
         </View>
@@ -167,10 +176,12 @@ export default function AdminKYCScreen() {
       {/* Image Preview Modal */}
       <Modal visible={previewUrl !== ""} transparent animationType="fade" onRequestClose={() => setPreviewUrl("")}>
         <TouchableOpacity style={s.imgModalBg} activeOpacity={1} onPress={() => setPreviewUrl("")}>
-          <TouchableOpacity style={s.imgClose} onPress={() => setPreviewUrl("")}>
-            <Ionicons name="close-circle" size={36} color="#fff" />
-          </TouchableOpacity>
-          <Image source={{ uri: previewUrl }} style={s.imgPreview} />
+          <View style={s.imgContainer}>
+            <TouchableOpacity style={s.imgClose} onPress={() => setPreviewUrl("")}>
+              <Ionicons name="close-circle" size={32} color="#fff" />
+            </TouchableOpacity>
+            <Image source={{ uri: previewUrl }} style={s.imgPreview} />
+          </View>
         </TouchableOpacity>
       </Modal>
 
@@ -237,6 +248,7 @@ const s = StyleSheet.create({
 
   // Image preview
   imgModalBg: { flex: 1, backgroundColor: "rgba(0,0,0,0.85)", justifyContent: "center", alignItems: "center" },
-  imgClose: { position: "absolute", top: 30, right: 16, zIndex: 10, padding: 8 },
-  imgPreview: { width: "90%", height: "70%", resizeMode: "contain", borderRadius: radius.lg },
+  imgContainer: { width: "90%", position: "relative" },
+  imgClose: { position: "absolute", top: -16, right: -16, zIndex: 10, backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 20 },
+  imgPreview: { width: "100%", height: "70%", resizeMode: "contain", borderRadius: radius.lg },
 });
