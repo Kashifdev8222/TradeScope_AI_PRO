@@ -228,11 +228,11 @@ async def list_kyc_reviews(
 
     kyc_list = []
     for row in (result.data or []):
-        # Fetch user info
+        # Fetch user info from user_profiles
         un, uc = "", ""
         try:
-            u = db.table("user_profiles").select("full_name,client_code").eq("id", row["user_id"]).limit(1).execute()
-            if u.data:
+            u = db.table("user_profiles").select("full_name,client_code").eq("id", row["user_id"]).execute()
+            if u.data and len(u.data) > 0:
                 un = u.data[0].get("full_name", "")
                 uc = u.data[0].get("client_code", "")
         except: pass
@@ -254,12 +254,17 @@ async def get_kyc_detail(
     if not kyc.data:
         raise HTTPException(status_code=404, detail="KYC not found")
 
-    # User info
+    # User info — use auth_client which also has service_role
     user_info = {}
     try:
-        u = db.table("user_profiles").select("full_name,client_code,email,phone,country").eq("id", kyc.data["user_id"]).limit(1).execute()
-        if u.data: user_info = u.data[0]
-    except: pass
+        u = auth_client.table("user_profiles").select("full_name,client_code,email,phone,country").eq("id", kyc.data["user_id"]).execute()
+        if u.data and len(u.data) > 0: user_info = u.data[0]
+    except Exception as e:
+        # Fallback: try db client
+        try:
+            u = db.table("user_profiles").select("full_name,client_code,email,phone,country").eq("id", kyc.data["user_id"]).execute()
+            if u.data and len(u.data) > 0: user_info = u.data[0]
+        except: pass
 
     # Documents with signed URLs
     docs = db.table("kyc_documents").select("*").eq("kyc_profile_id", kyc_id).execute()
