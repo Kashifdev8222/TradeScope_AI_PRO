@@ -33,6 +33,9 @@ export default function AdminSidebar() {
         <TouchableOpacity style={mob.tab} onPress={() => router.push("/admin/users")}>
           <Ionicons name="people-outline" size={21} color={pathname.startsWith("/admin/users") ? colors.accent : colors.textMuted} />
         </TouchableOpacity>
+        <TouchableOpacity style={mob.tab} onPress={() => router.push("/admin/kyc")}>
+          <Ionicons name="shield-checkmark-outline" size={21} color={pathname.startsWith("/admin/kyc") ? colors.accent : colors.textMuted} />
+        </TouchableOpacity>
       </View>
     );
   }
@@ -64,6 +67,7 @@ export default function AdminSidebar() {
         <Text style={s.sectionLabel}>MANAGEMENT</Text>
         <NavItem icon="grid-outline" label="Dashboard" href="/admin" pathname={pathname} router={router} />
         <NavItem icon="people-outline" label="Users" href="/admin/users" pathname={pathname} router={router} />
+        <NavItem icon="shield-checkmark-outline" label="KYC Review" href="/admin/kyc" pathname={pathname} router={router} />
 
         <Text style={[s.sectionLabel, { marginTop: spacing.lg }]}>COMING SOON</Text>
         <View style={s.navDisabled}>

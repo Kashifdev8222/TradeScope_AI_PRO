@@ -54,6 +54,7 @@ export default function AdminLayout() {
           <Stack.Screen name="index" />
           <Stack.Screen name="users" />
           <Stack.Screen name="users/[id]" />
+          <Stack.Screen name="kyc" />
         </Stack>
       </View>
       {!isWide && <AdminSidebar />}
