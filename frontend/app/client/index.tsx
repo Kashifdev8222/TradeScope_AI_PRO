@@ -1,7 +1,10 @@
+import { useState, useCallback } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../src/shared/stores/authStore";
+import { useAccountStore, SelectedAccount } from "../../src/shared/stores/accountStore";
+import { accountApi, TradingAccount } from "../../src/shared/api";
 import ScreenContainer from "../../src/shared/components/ScreenContainer";
 import { colors, spacing, radius, fontSize, fontWeight } from "../../src/shared/theme";
 
@@ -9,6 +12,22 @@ export default function Dashboard() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const { width } = useWindowDimensions();
+  const selected = useAccountStore((s) => s.selected);
+  const setSelected = useAccountStore((s) => s.setSelected);
+  const [accounts, setAccounts] = useState<TradingAccount[]>([]);
+  const [showSwitcher, setShowSwitcher] = useState(false);
+
+  useFocusEffect(useCallback(() => {
+    accountApi.list().then(setAccounts).catch(() => {});
+    return () => setShowSwitcher(false);
+  }, []));
+
+  // Auto-select first account if none selected
+  useFocusEffect(useCallback(() => {
+    if (!selected && accounts.length > 0) {
+      setSelected(accounts[0]);
+    }
+  }, [accounts.length, selected]));
 
   return (
     <ScreenContainer max={1400} scroll>
@@ -18,6 +37,36 @@ export default function Dashboard() {
           <Text style={s.greeting}>Good {greet()}, {user?.full_name?.split(" ")[0] ?? "Trader"}</Text>
           <Text style={s.subtitle}>Trading overview & quick actions</Text>
         </View>
+      </View>
+
+      {/* Account Switcher */}
+      <View style={s.switcherRow}>
+        <Text style={s.switcherLabel}>Active Account</Text>
+        <TouchableOpacity style={s.switcher} onPress={() => setShowSwitcher(!showSwitcher)} activeOpacity={0.7}>
+          <View style={s.switcherLeft}>
+            <View style={[s.switcherDot, { backgroundColor: selected?.environment === "demo" ? colors.accent : colors.warning }]} />
+            <View>
+              <Text style={s.switcherName}>{selected?.account_name || "Select account"}</Text>
+              <Text style={s.switcherNum}>{selected?.account_number || ""}</Text>
+            </View>
+          </View>
+          <Ionicons name={showSwitcher ? "chevron-up" : "chevron-down"} size={16} color={colors.textMuted} />
+        </TouchableOpacity>
+
+        {showSwitcher && (
+          <View style={s.switcherDrop}>
+            {accounts.map((a) => (
+              <TouchableOpacity key={a.id} style={[s.switcherItem, selected?.id === a.id && { backgroundColor: colors.accentBg }]} onPress={() => { setSelected(a); setShowSwitcher(false); }}>
+                <View style={[s.switcherDot, { backgroundColor: a.environment === "demo" ? colors.accent : colors.warning }]} />
+                <View style={{ flex: 1 }}>
+                  <Text style={s.switcherItemName}>{a.account_name}</Text>
+                  <Text style={s.switcherItemNum}>{a.account_number} · {a.environment}</Text>
+                </View>
+                {selected?.id === a.id && <Ionicons name="checkmark" size={16} color={colors.accent} />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </View>
 
       {/* Portfolio Stats */}
@@ -114,9 +163,37 @@ function ComingItem({ icon, label, desc }: any) {
 }
 
 const s = StyleSheet.create({
-  header: { marginBottom: spacing.xl },
+  header: { marginBottom: spacing.lg },
   greeting: { fontSize: 24, fontWeight: fontWeight.bold, color: colors.text },
   subtitle: { fontSize: fontSize.sm, color: colors.textSecondary, marginTop: 4 },
+
+  // Account switcher
+  switcherRow: { marginBottom: spacing.xl, position: "relative", zIndex: 100 },
+  switcherLabel: { fontSize: fontSize.xs, color: colors.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: spacing.sm },
+  switcher: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    backgroundColor: colors.card, borderRadius: radius.xl,
+    padding: spacing.md, borderWidth: 1, borderColor: colors.cardBorder,
+  },
+  switcherLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
+  switcherDot: { width: 10, height: 10, borderRadius: 5 },
+  switcherName: { fontSize: fontSize.md, fontWeight: fontWeight.semibold, color: colors.text },
+  switcherNum: { fontSize: fontSize.xs, color: colors.textMuted, marginTop: 1 },
+  switcherDrop: {
+    position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4,
+    backgroundColor: colors.card, borderRadius: radius.lg,
+    borderWidth: 1, borderColor: colors.cardBorder,
+    zIndex: 200, elevation: 20,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16,
+    overflow: "hidden",
+  },
+  switcherItem: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    paddingVertical: 13, paddingHorizontal: spacing.md,
+    borderBottomWidth: 1, borderBottomColor: colors.divider,
+  },
+  switcherItemName: { fontSize: fontSize.sm, fontWeight: fontWeight.medium, color: colors.text },
+  switcherItemNum: { fontSize: fontSize.xs, color: colors.textMuted, marginTop: 1 },
 
   statsRow: { flexDirection: "row", gap: 14, marginBottom: spacing.xl },
   statsRowSmall: { flexWrap: "wrap" },
