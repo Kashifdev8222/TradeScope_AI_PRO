@@ -306,9 +306,20 @@ export const kycApi = {
   submit: () =>
     request<any>("/client/kyc", { method: "POST" }),
 
-  uploadDocument: (documentType: string, storagePath: string) =>
-    request<any>("/client/kyc/documents", {
+  uploadFile: async (file: Blob, fileName: string, documentType: string) => {
+    const token = useAuthStore.getState().tokens?.access_token;
+    const fd = new FormData();
+    fd.append("file", file, fileName);
+    fd.append("document_type", documentType);
+    const res = await fetch(`${API_URL}/client/kyc/documents`, {
       method: "POST",
-      body: JSON.stringify({ document_type: documentType, storage_path: storagePath }),
-    }),
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err || `Upload failed: ${res.status}`);
+    }
+    return res.json();
+  },
 };
