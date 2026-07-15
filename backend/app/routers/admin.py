@@ -206,3 +206,102 @@ async def admin_me(
         return detail
     except ValueError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin profile not found")
+
+
+# ===========================================================================
+# KYC REVIEW (Compliance Admin + Super Admin)
+# ===========================================================================
+
+@router.get("/kyc")
+async def list_kyc_reviews(
+    status: str = Query(None),
+    db: Client = Depends(get_supabase_db),
+    admin_id: str = Depends(require_role("super_admin", "compliance_admin")),
+):
+    """List KYC profiles for review."""
+    query = db.table("kyc_profiles").select("*")
+    if status:
+        query = query.eq("status", status)
+    else:
+        query = query.in_("status", ["pending", "under_review"])
+    result = query.order("submitted_at", desc=True).execute()
+
+    kyc_list = []
+    for row in (result.data or []):
+        # Fetch user info
+        un, uc = "", ""
+        try:
+            u = db.table("user_profiles").select("full_name,client_code").eq("id", row["user_id"]).limit(1).execute()
+            if u.data:
+                un = u.data[0].get("full_name", "")
+                uc = u.data[0].get("client_code", "")
+        except: pass
+        kyc_list.append({"id": row["id"], "user_id": row["user_id"], "status": row["status"],
+                         "risk_level": row.get("risk_level", "medium"), "submitted_at": row.get("submitted_at"),
+                         "full_name": un, "client_code": uc})
+    return kyc_list
+
+
+@router.get("/kyc/{kyc_id}")
+async def get_kyc_detail(
+    kyc_id: str,
+    db: Client = Depends(get_supabase_db),
+    auth_client: Client = Depends(get_supabase_auth),
+    admin_id: str = Depends(require_role("super_admin", "compliance_admin")),
+):
+    """Get KYC detail with user info and documents."""
+    kyc = db.table("kyc_profiles").select("*").eq("id", kyc_id).single().execute()
+    if not kyc.data:
+        raise HTTPException(status_code=404, detail="KYC not found")
+
+    # User info
+    user_info = {}
+    try:
+        u = db.table("user_profiles").select("full_name,client_code,email,phone,country").eq("id", kyc.data["user_id"]).limit(1).execute()
+        if u.data: user_info = u.data[0]
+    except: pass
+
+    # Documents with signed URLs
+    docs = db.table("kyc_documents").select("*").eq("kyc_profile_id", kyc_id).execute()
+    docs_list = []
+    for d in (docs.data or []):
+        url = ""
+        try:
+            s = auth_client.storage.from_("kyc-documents").create_signed_url(d["storage_path"], 600)
+            url = s.get("signedURL", "") if isinstance(s, dict) else ""
+        except: pass
+        docs_list.append({**d, "preview_url": url})
+
+    return {"kyc": {**kyc.data, "user_profiles": user_info}, "documents": docs_list}
+
+
+@router.post("/kyc/{kyc_id}/approve")
+async def approve_kyc(
+    kyc_id: str,
+    body: dict,
+    db: Client = Depends(get_supabase_db),
+    admin_id: str = Depends(require_role("super_admin", "compliance_admin")),
+):
+    """Approve KYC."""
+    kyc = db.table("kyc_profiles").select("user_id").eq("id", kyc_id).single().execute()
+    if not kyc.data: raise HTTPException(status_code=404, detail="KYC not found")
+    db.table("kyc_profiles").update({"status": "approved", "reviewed_at": "now()", "reviewed_by": admin_id}).eq("id", kyc_id).execute()
+    db.table("user_profiles").update({"kyc_status": "approved"}).eq("id", kyc.data["user_id"]).execute()
+    return {"message": "Approved"}
+
+
+@router.post("/kyc/{kyc_id}/reject")
+async def reject_kyc(
+    kyc_id: str,
+    body: dict,
+    db: Client = Depends(get_supabase_db),
+    admin_id: str = Depends(require_role("super_admin", "compliance_admin")),
+):
+    """Reject KYC."""
+    reason = body.get("reason", "").strip()
+    if not reason: raise HTTPException(status_code=400, detail="Rejection reason required")
+    kyc = db.table("kyc_profiles").select("user_id").eq("id", kyc_id).single().execute()
+    if not kyc.data: raise HTTPException(status_code=404, detail="KYC not found")
+    db.table("kyc_profiles").update({"status": "rejected", "reviewed_at": "now()", "reviewed_by": admin_id, "rejection_reason": reason}).eq("id", kyc_id).execute()
+    db.table("user_profiles").update({"kyc_status": "rejected"}).eq("id", kyc.data["user_id"]).execute()
+    return {"message": "Rejected"}
