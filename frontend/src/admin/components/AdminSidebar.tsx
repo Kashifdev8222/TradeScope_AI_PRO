@@ -40,7 +40,7 @@ export default function AdminSidebar() {
   return (
     <View style={s.root}>
       {/* Header */}
-      <TouchableOpacity style={s.brand} onPress={() => router.push("/client")}>
+      <TouchableOpacity style={s.brand} onPress={() => router.push("/admin")}>
         <View style={s.brandIcon}>
           <Ionicons name="shield-checkmark" size={22} color="#fff" />
         </View>
