@@ -54,10 +54,10 @@ export default function AdminKYCScreen() {
 
       {/* Filter pills */}
       <FlatList horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginBottom: spacing.lg }}
-        data={[null, "pending", "approved", "rejected"]} keyExtractor={f => f ?? "pending"}
+        data={[null, "pending", "approved", "rejected"]} keyExtractor={f => f ?? "all"}
         renderItem={({ item }) => (
           <TouchableOpacity style={[s.pill, filter === item && s.pillActive]} onPress={() => setFilter(item)}>
-            <Text style={[s.pillT, filter === item && s.pillTA]}>{item === null ? "Pending" : item}</Text>
+            <Text style={[s.pillT, filter === item && s.pillTA]}>{item === null ? "All" : item}</Text>
           </TouchableOpacity>
         )}
       />

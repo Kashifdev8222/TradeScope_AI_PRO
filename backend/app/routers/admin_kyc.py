@@ -20,7 +20,7 @@ async def list_kyc_reviews(
     admin_id: str = Depends(require_role("super_admin", "compliance_admin")),
 ):
     """List KYC profiles for review. Compliance Admin + Super Admin only."""
-    query = db.table("kyc_profiles").select("*, user_profiles(full_name, client_code, email)")
+    query = db.table("kyc_profiles").select("*, user_profiles!inner(full_name, client_code)")
 
     if status:
         query = query.eq("status", status)
@@ -31,7 +31,7 @@ async def list_kyc_reviews(
 
     kyc_list = []
     for row in (result.data or []):
-        profile = row.get("user_profiles", {})
+        profile = row.get("user_profiles") or {}
         kyc_list.append({
             "id": row["id"],
             "user_id": row["user_id"],
