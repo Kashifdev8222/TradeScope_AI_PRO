@@ -66,7 +66,8 @@ export default function KYCScreen() {
     }
   };
 
-  const sk = kyc?.kyc_profile?.status || user?.kyc_status || "not_submitted";
+  // Only use KYC profile status, not user profile (user profile kyc_status is stale)
+  const sk = kyc?.kyc_profile?.status || "not_submitted";
   const si = STATUS[sk] || STATUS.not_submitted;
 
   return (
