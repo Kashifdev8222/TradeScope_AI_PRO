@@ -58,7 +58,7 @@ async def upload_kyc_document(
 ):
     """Upload a KYC document file to Supabase Storage."""
 
-    valid_types = ["passport", "drivers_license", "utility_bill", "bank_statement", "national_id", "other"]
+    valid_types = ["passport", "id_front", "id_back", "drivers_license", "utility_bill", "bank_statement", "national_id", "other"]
     if document_type not in valid_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
