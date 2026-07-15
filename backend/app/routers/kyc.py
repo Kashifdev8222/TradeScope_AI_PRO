@@ -37,10 +37,11 @@ async def get_kyc_status(
 async def submit_kyc(
     user_id: str = Depends(get_profile_id),
     db: Client = Depends(get_supabase_db),
+    auth_client: Client = Depends(get_supabase_auth),
 ):
     """Submit KYC for review."""
     try:
-        return await kyc_service.submit_kyc(db, user_id)
+        return await kyc_service.submit_kyc(db, user_id, auth_client)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 

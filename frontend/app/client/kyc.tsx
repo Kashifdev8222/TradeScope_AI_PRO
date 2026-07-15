@@ -90,7 +90,7 @@ export default function KYCScreen() {
             <Text style={s.bannerDesc}>
               {isVerified ? "Your identity has been verified." :
                isPending ? "Documents under review (24-48 hours). Upload additional documents if needed." :
-               isRejected ? "Documents rejected. Please upload new documents and resubmit." :
+               isRejected ? `Documents rejected. Reason: ${kyc?.kyc_profile?.rejection_reason || "Not specified"}. Please upload new documents.` :
                "Upload the required documents and submit for review."}
             </Text>
           </View>

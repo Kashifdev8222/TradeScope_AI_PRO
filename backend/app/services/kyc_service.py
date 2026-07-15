@@ -19,16 +19,25 @@ async def get_kyc_status(db: Client, user_id: str) -> dict:
         return {}
 
 
-async def submit_kyc(db: Client, user_id: str) -> dict:
+async def submit_kyc(db: Client, user_id: str, auth_client: Client = None) -> dict:
     """Submit KYC for review. Updates existing profile or creates one. Stores user info."""
-    # Get user info to store alongside KYC
+    # Get user info — try auth_client first (more reliable for user_profiles queries)
     full_name, client_code, email = "", "", ""
+    client = auth_client or db
     try:
-        up = db.table("user_profiles").select("full_name,client_code,auth_user_id").eq("id", user_id).execute()
-        if up.data:
+        up = client.table("user_profiles").select("full_name,client_code,auth_user_id").eq("id", user_id).execute()
+        if up.data and len(up.data) > 0:
             full_name = up.data[0].get("full_name", "")
             client_code = up.data[0].get("client_code", "")
     except: pass
+    # If still empty, try db client
+    if not full_name and client != db:
+        try:
+            up = db.table("user_profiles").select("full_name,client_code,auth_user_id").eq("id", user_id).execute()
+            if up.data and len(up.data) > 0:
+                full_name = up.data[0].get("full_name", "")
+                client_code = up.data[0].get("client_code", "")
+        except: pass
 
     result = (
         db.table("kyc_profiles")
