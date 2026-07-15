@@ -89,3 +89,35 @@ async def upload_kyc_document(
         return await kyc_service.upload_kyc_document(db, user_id, document_type, storage_path)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+# ---------------------------------------------------------------------------
+# GET /client/kyc/documents/{doc_id}/url
+# ---------------------------------------------------------------------------
+@router.get("/documents/{doc_id}/url")
+async def get_document_preview_url(
+    doc_id: str,
+    user_id: str = Depends(get_profile_id),
+    db: Client = Depends(get_supabase_db),
+    auth_client: Client = Depends(get_supabase_auth),
+):
+    """Get a temporary signed URL for previewing a KYC document."""
+    doc = (
+        db.table("kyc_documents")
+        .select("id, storage_path, kyc_profiles!inner(user_id)")
+        .eq("id", doc_id)
+        .eq("kyc_profiles.user_id", user_id)
+        .limit(1)
+        .execute()
+    )
+    if not doc.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    try:
+        signed = auth_client.storage.from_("kyc-documents").create_signed_url(
+            doc.data[0]["storage_path"], 300
+        )
+        url = signed.get("signedURL", "") if isinstance(signed, dict) else ""
+        return {"url": url}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

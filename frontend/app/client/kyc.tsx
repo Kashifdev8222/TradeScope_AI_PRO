@@ -1,16 +1,18 @@
 import { useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { kycApi } from "../../src/shared/api";
+import { useAuthStore } from "../../src/shared/stores/authStore";
 import ScreenContainer from "../../src/shared/components/ScreenContainer";
 import { colors, spacing, radius, fontSize, fontWeight } from "../../src/shared/theme";
 
-// Per client requirements — all accepted document types
+// Per client requirements
 const DOC_TYPES = [
   { key: "passport", label: "Passport", icon: "card-outline" },
+  { key: "id_front", label: "ID Card - Front", icon: "id-card-outline" },
+  { key: "id_back", label: "ID Card - Back", icon: "copy-outline" },
   { key: "drivers_license", label: "Driver's License", icon: "car-outline" },
-  { key: "national_id", label: "National ID Card", icon: "id-card-outline" },
   { key: "utility_bill", label: "Utility Bill", icon: "receipt-outline" },
   { key: "bank_statement", label: "Bank Statement", icon: "document-text-outline" },
   { key: "other", label: "Other Document", icon: "attach-outline" },
@@ -31,11 +33,8 @@ export default function KYCScreen() {
     input.onchange = async (e: any) => {
       const file = e.target?.files?.[0]; if (!file) return;
       setUploading(docType); setMsg("");
-      try {
-        await kycApi.uploadFile(file, file.name, docType);
-        setMsg("uploaded");
-        fetch();
-      } catch (e: any) { setMsg(e.message || "Upload failed"); }
+      try { await kycApi.uploadFile(file, file.name, docType); setMsg("uploaded"); fetch(); }
+      catch (e: any) { setMsg(e.message || "Upload failed"); }
       finally { setUploading(""); }
     };
     input.click();
@@ -46,6 +45,21 @@ export default function KYCScreen() {
     try { await kycApi.submit(); setMsg("submitted"); fetch(); }
     catch (e: any) { setMsg(e.message || "Failed"); }
     finally { setSubmitting(false); }
+  };
+
+  // Get signed URL for preview
+  const previewDoc = async (docId: string) => {
+    try {
+      const token = useAuthStore.getState().tokens?.access_token;
+      const res = await fetch(`https://tradescope-ai-api.onrender.com/api/v1/client/kyc/documents/${docId}/url`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) Linking.openURL(data.url);
+        else setMsg("Could not generate preview URL");
+      }
+    } catch { setMsg("Preview failed"); }
   };
 
   const kycStatus = kyc?.kyc_profile?.status || "not_submitted";
@@ -71,67 +85,62 @@ export default function KYCScreen() {
           ]}>
             <Ionicons
               name={isVerified ? "checkmark-circle" : isPending ? "time-outline" : isRejected ? "close-circle" : "cloud-upload-outline"}
-              size={44}
-              color={isVerified ? colors.success : isPending ? colors.warning : isRejected ? colors.danger : colors.accent}
-            />
+              size={44} color={isVerified ? colors.success : isPending ? colors.warning : isRejected ? colors.danger : colors.accent} />
             <Text style={[s.bannerTitle, isVerified ? { color: colors.success } : isPending ? { color: colors.warning } : isRejected ? { color: colors.danger } : { color: colors.text }]}>
               {isVerified ? "Verification Approved" : isPending ? "Verification In Progress" : isRejected ? "Verification Rejected" : "Submit Your Documents"}
             </Text>
             <Text style={s.bannerDesc}>
-              {isVerified ? "Your identity has been verified. You have full platform access." :
-               isPending ? "Your documents are being reviewed by our compliance team. This typically takes 24-48 hours." :
-               isRejected ? "Your documents were rejected. Please review the requirements and resubmit." :
-               `Upload the required documents and submit them for review. You need at least one government ID and proof of address.`}
+              {isVerified ? "Your identity has been verified." :
+               isPending ? "Documents under review (24-48 hours). Upload additional documents if needed." :
+               isRejected ? "Documents rejected. Please upload new documents and resubmit." :
+               "Upload the required documents and submit for review."}
             </Text>
           </View>
 
-          {/* Messages */}
           {msg !== "" && (
             <View style={[s.msg, (msg === "uploaded" || msg === "submitted") ? { backgroundColor: colors.successBg } : { backgroundColor: colors.dangerBg }]}>
               <Ionicons name={(msg === "uploaded" || msg === "submitted") ? "checkmark-circle" : "alert-circle"} size={16} color={(msg === "uploaded" || msg === "submitted") ? colors.success : colors.danger} />
               <Text style={{ color: (msg === "uploaded" || msg === "submitted") ? colors.success : colors.danger, fontSize: fontSize.sm, flex: 1 }}>
-                {msg === "uploaded" ? "Document uploaded successfully." : msg === "submitted" ? "Documents submitted for review!" : msg}
+                {msg === "uploaded" ? "Document uploaded." : msg === "submitted" ? "Documents submitted for review!" : msg}
               </Text>
             </View>
           )}
 
-          {/* Document Upload Section */}
+          {/* Upload Section — always visible unless verified */}
           {!isVerified && (
             <View style={s.card}>
               <Text style={s.cardTitle}>{isPending ? "Add More Documents" : "Upload Documents"}</Text>
-              <Text style={s.cardSub}>Select a document type to upload. Accepted formats: JPG, PNG, PDF (max 10MB).</Text>
-
+              <Text style={s.cardSub}>Accepted: JPG, PNG, PDF (max 10MB per file)</Text>
               {DOC_TYPES.map((dt) => {
-                const existing = docs.find((d: any) => d.document_type === dt.key);
+                const existing = docs.filter((d: any) => d.document_type === dt.key);
                 return (
                   <View key={dt.key} style={s.docTypeRow}>
-                    <View style={[s.docTypeIcon, existing ? { backgroundColor: colors.successBg } : { backgroundColor: colors.input }]}>
-                      <Ionicons name={dt.icon as any} size={22} color={existing ? colors.success : colors.textMuted} />
+                    <View style={[s.docTypeIcon, existing.length > 0 ? { backgroundColor: colors.successBg } : { backgroundColor: colors.input }]}>
+                      <Ionicons name={dt.icon as any} size={22} color={existing.length > 0 ? colors.success : colors.textMuted} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={s.docTypeLabel}>{dt.label}</Text>
-                      {existing ? (
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      {existing.length > 0 ? (
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
                           <View style={[s.dot, { backgroundColor: colors.success }]} />
                           <Text style={{ color: colors.success, fontSize: 12 }}>Uploaded</Text>
+                          {/* Preview button */}
+                          <TouchableOpacity onPress={() => previewDoc(existing[0].id)} style={s.previewLink}>
+                            <Ionicons name="eye-outline" size={14} color={colors.accent} />
+                            <Text style={{ color: colors.accent, fontSize: 11 }}>View</Text>
+                          </TouchableOpacity>
                         </View>
                       ) : (
-                        <Text style={{ color: colors.textMuted, fontSize: 12 }}>Not uploaded</Text>
+                        <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2 }}>Not uploaded</Text>
                       )}
                     </View>
                     <TouchableOpacity
-                      style={[s.uploadBtn, existing && { backgroundColor: colors.successBg, borderColor: colors.success }]}
+                      style={[s.uploadBtn, existing.length > 0 && { backgroundColor: colors.accentBg, borderColor: colors.accent }]}
                       onPress={() => uploadFile(dt.key)}
-                      disabled={uploading !== ""}
-                      activeOpacity={0.7}
-                    >
-                      {uploading === dt.key ? (
-                        <ActivityIndicator color={colors.accent} size="small" />
-                      ) : existing ? (
-                        <Text style={{ color: colors.success, fontSize: fontSize.xs, fontWeight: fontWeight.semibold }}>Replace</Text>
-                      ) : (
-                        <Text style={{ color: colors.accent, fontSize: fontSize.xs, fontWeight: fontWeight.semibold }}>Upload</Text>
-                      )}
+                      disabled={uploading !== ""} activeOpacity={0.7}>
+                      {uploading === dt.key ? <ActivityIndicator color={colors.accent} size="small" /> :
+                       existing.length > 0 ? <Text style={{ color: colors.accent, fontSize: 11, fontWeight: fontWeight.semibold }}>Update</Text> :
+                       <Text style={{ color: colors.accent, fontSize: 11, fontWeight: fontWeight.semibold }}>Upload</Text>}
                     </TouchableOpacity>
                   </View>
                 );
@@ -139,22 +148,22 @@ export default function KYCScreen() {
             </View>
           )}
 
-          {/* Submit Button — only if not yet submitted and has documents */}
-          {!isVerified && !isPending && hasDocs && (
+          {/* Submit Button — always show if has documents and not verified */}
+          {!isVerified && hasDocs && (
             <TouchableOpacity style={[s.submitBtn, submitting && { opacity: 0.6 }]} onPress={submitAll} disabled={submitting} activeOpacity={0.7}>
               {submitting ? <ActivityIndicator color="#fff" /> : (
                 <>
                   <Ionicons name="send-outline" size={18} color="#fff" />
-                  <Text style={s.submitBtnT}>Submit All Documents for Review</Text>
+                  <Text style={s.submitBtnT}>{isPending ? "Resubmit for Review" : "Submit All Documents for Review"}</Text>
                 </>
               )}
             </TouchableOpacity>
           )}
 
-          {!isVerified && !isPending && !hasDocs && (
+          {!isVerified && !hasDocs && (
             <View style={s.hint}>
               <Ionicons name="information-circle-outline" size={18} color={colors.textMuted} />
-              <Text style={s.hintT}>Upload at least one document above, then submit for review</Text>
+              <Text style={s.hintT}>Upload at least one document, then submit for review</Text>
             </View>
           )}
         </>
@@ -166,35 +175,25 @@ export default function KYCScreen() {
 
 const s = StyleSheet.create({
   title: { fontSize: 24, fontWeight: fontWeight.bold, color: colors.text, marginBottom: spacing.lg },
-
   banner: { borderRadius: radius.xl, padding: spacing.xl, alignItems: "center", gap: spacing.sm, marginBottom: spacing.lg, borderWidth: 2 },
   bannerTitle: { fontSize: fontSize.xl, fontWeight: fontWeight.bold },
   bannerDesc: { fontSize: fontSize.sm, color: colors.textSecondary, textAlign: "center", lineHeight: 20 },
-
   msg: { flexDirection: "row", alignItems: "center", gap: 10, borderRadius: radius.md, padding: 14, marginBottom: spacing.lg },
 
   card: { backgroundColor: colors.card, borderRadius: radius.xl, padding: spacing.xl, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.cardBorder },
   cardTitle: { fontSize: fontSize.md, fontWeight: fontWeight.semibold, color: colors.text, marginBottom: 4 },
   cardSub: { fontSize: fontSize.xs, color: colors.textMuted, marginBottom: spacing.lg },
 
-  docTypeRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  docTypeRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: colors.divider },
   docTypeIcon: { width: 44, height: 44, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
   docTypeLabel: { fontSize: fontSize.sm, fontWeight: fontWeight.medium, color: colors.text },
   dot: { width: 7, height: 7, borderRadius: 4 },
+  previewLink: { flexDirection: "row", alignItems: "center", gap: 3, marginLeft: 8 },
 
-  uploadBtn: {
-    paddingHorizontal: 18, paddingVertical: 8,
-    borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.accent,
-    backgroundColor: colors.accentBg, minWidth: 80, alignItems: "center",
-  },
+  uploadBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.inputBorder, backgroundColor: colors.input, minWidth: 72, alignItems: "center" },
 
-  submitBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: colors.accent, borderRadius: radius.md,
-    paddingVertical: 16, marginTop: spacing.sm,
-  },
+  submitBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: colors.accent, borderRadius: radius.md, paddingVertical: 16, marginTop: spacing.sm },
   submitBtnT: { color: "#fff", fontSize: fontSize.md, fontWeight: fontWeight.semibold },
-
   hint: { flexDirection: "row", alignItems: "center", gap: 8, padding: spacing.md, marginTop: spacing.sm },
   hintT: { color: colors.textMuted, fontSize: fontSize.sm, flex: 1 },
 });
