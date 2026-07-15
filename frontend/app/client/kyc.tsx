@@ -32,8 +32,16 @@ export default function KYCScreen() {
     input.onchange = async (e: any) => {
       const file = e.target?.files?.[0]; if (!file) return;
       setUploading(docType); setMsg("");
-      try { await kycApi.uploadFile(file, file.name, docType); setMsg("uploaded"); fetch(); }
-      catch (e: any) { setMsg(e.message || "Upload failed"); }
+      console.log("Upload:", docType, file.name, file.size);
+      try {
+        await kycApi.uploadFile(file, file.name, docType);
+        console.log("Upload OK");
+        setMsg("uploaded"); fetch();
+      }
+      catch (e: any) {
+        console.error("Upload ERR:", e.message, e);
+        setMsg(e.message || "Upload failed");
+      }
       finally { setUploading(""); }
     };
     input.click();
@@ -46,10 +54,17 @@ export default function KYCScreen() {
     finally { setSubmitting(false); }
   };
 
-  // Preview by opening Supabase storage URL directly (bucket is public)
+  // Preview by opening Supabase storage URL directly
   const previewDoc = (storagePath: string) => {
+    console.log("Preview path:", storagePath);
     const url = `https://dzvsdphddukzxqamzktc.supabase.co/storage/v1/object/public/kyc-documents/${storagePath}`;
-    window.open(url, "_blank");
+    console.log("Opening:", url);
+    try {
+      window.open(url, "_blank");
+    } catch (e: any) {
+      console.error("Preview error:", e);
+      setMsg("Preview: " + (e.message || "error"));
+    }
   };
 
   const kycStatus = kyc?.kyc_profile?.status || "not_submitted";
