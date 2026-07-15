@@ -128,18 +128,25 @@ export default function KYCScreen() {
                       )}
                     </View>
                     {/* Action buttons */}
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                       {existing.length > 0 && (
-                        <TouchableOpacity onPress={() => previewDoc(existing[0].storage_path)} style={[s.actionBtn, { borderColor: colors.accent }]}>
-                          <Ionicons name="eye-outline" size={15} color={colors.accent} />
+                        <TouchableOpacity onPress={() => previewDoc(existing[0].storage_path)} style={s.viewBtn}>
+                          <Ionicons name="eye-outline" size={14} color={colors.accent} />
+                          <Text style={{ color: colors.accent, fontSize: 11, fontWeight: fontWeight.semibold }}>View</Text>
                         </TouchableOpacity>
                       )}
                       <TouchableOpacity
-                        style={[s.actionBtn, existing.length > 0 ? { borderColor: colors.accent } : { borderColor: colors.inputBorder }]}
+                        style={s.uploadBtn}
                         onPress={() => uploadFile(dt.key)}
                         disabled={uploading !== ""} activeOpacity={0.7}>
-                        {uploading === dt.key ? <ActivityIndicator color={colors.accent} size="small" /> :
-                         <Ionicons name={existing.length > 0 ? "sync-outline" : "cloud-upload-outline"} size={15} color={colors.accent} />}
+                        {uploading === dt.key ? <ActivityIndicator color={colors.accent} size="small" /> : (
+                          <>
+                            <Ionicons name={existing.length > 0 ? "sync-outline" : "cloud-upload-outline"} size={14} color={colors.accent} />
+                            <Text style={{ color: colors.accent, fontSize: 11, fontWeight: fontWeight.semibold }}>
+                              {existing.length > 0 ? "Update" : "Upload"}
+                            </Text>
+                          </>
+                        )}
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -204,9 +211,15 @@ const s = StyleSheet.create({
   docTypeLabel: { fontSize: fontSize.sm, fontWeight: fontWeight.medium, color: colors.text },
   dot: { width: 7, height: 7, borderRadius: 4 },
 
-  actionBtn: {
-    width: 34, height: 34, borderRadius: radius.sm,
-    borderWidth: 1.5, alignItems: "center", justifyContent: "center",
+  viewBtn: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 10, paddingVertical: 7,
+    borderRadius: radius.sm, borderWidth: 1.5, borderColor: colors.accent,
+  },
+  uploadBtn: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 10, paddingVertical: 7,
+    borderRadius: radius.sm, borderWidth: 1.5, borderColor: colors.inputBorder,
   },
 
   submitBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: colors.accent, borderRadius: radius.md, paddingVertical: 16, marginTop: spacing.sm },
