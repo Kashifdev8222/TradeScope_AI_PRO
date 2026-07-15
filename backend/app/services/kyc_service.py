@@ -11,35 +11,32 @@ async def get_kyc_status(db: Client, user_id: str) -> dict:
             db.table("kyc_profiles")
             .select("*")
             .eq("user_id", user_id)
-            .single()
+            .limit(1)
             .execute()
         )
-        return result.data if result.data else {}
+        return result.data[0] if result.data else {}
     except Exception:
         return {}
 
 
 async def submit_kyc(db: Client, user_id: str) -> dict:
-    """Submit or update KYC profile. Creates if doesn't exist."""
-    try:
-        existing = (
-            db.table("kyc_profiles")
-            .select("id, status")
-            .eq("user_id", user_id)
-            .single()
-            .execute()
-        )
-    except Exception:
-        existing = type("R", (), {"data": None})()
+    """Submit KYC for review. Updates existing profile or creates one."""
+    result = (
+        db.table("kyc_profiles")
+        .select("id, status")
+        .eq("user_id", user_id)
+        .limit(1)
+        .execute()
+    )
 
-    if existing.data:
-        kyc_id = existing.data["id"]
+    if result.data:
+        kyc_id = result.data[0]["id"]
         db.table("kyc_profiles").update({
             "status": "pending",
             "submitted_at": "now()",
         }).eq("id", kyc_id).execute()
     else:
-        result = (
+        new = (
             db.table("kyc_profiles")
             .insert({
                 "user_id": user_id,
@@ -49,7 +46,7 @@ async def submit_kyc(db: Client, user_id: str) -> dict:
             })
             .execute()
         )
-        kyc_id = result.data[0]["id"] if result.data else None
+        kyc_id = new.data[0]["id"] if new.data else None
 
     db.table("user_profiles").update({
         "kyc_status": "pending",
@@ -66,11 +63,11 @@ async def upload_kyc_document(db: Client, user_id: str, document_type: str, stor
             db.table("kyc_profiles")
             .select("id")
             .eq("user_id", user_id)
-            .single()
+            .limit(1)
             .execute()
         )
         if kyc.data:
-            kyc_id = kyc.data["id"]
+            kyc_id = kyc.data[0]["id"]
     except Exception:
         pass
 
@@ -100,25 +97,14 @@ async def upload_kyc_document(db: Client, user_id: str, document_type: str, stor
 
 
 async def list_kyc_documents(db: Client, user_id: str) -> list[dict]:
-    """List all KYC documents for a user."""
+    """List all KYC documents for a user. Uses a direct join query."""
     try:
-        kyc = (
-            db.table("kyc_profiles")
-            .select("id")
-            .eq("user_id", user_id)
-            .single()
+        result = (
+            db.table("kyc_documents")
+            .select("*, kyc_profiles!inner(id)")
+            .eq("kyc_profiles.user_id", user_id)
             .execute()
         )
+        return result.data or []
     except Exception:
         return []
-
-    if not kyc.data:
-        return []
-
-    result = (
-        db.table("kyc_documents")
-        .select("*")
-        .eq("kyc_profile_id", kyc.data["id"])
-        .execute()
-    )
-    return result.data or []
