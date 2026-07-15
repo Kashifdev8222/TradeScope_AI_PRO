@@ -12,6 +12,7 @@ const STATUS: Record<string, { icon: any; color: string; bg: string; label: stri
   pending: { icon: "time-outline", color: colors.warning, bg: colors.warningBg, label: "Under Review", desc: "Your documents are being reviewed. 24-48 hours." },
   under_review: { icon: "search-outline", color: colors.warning, bg: colors.warningBg, label: "Under Review", desc: "Your documents are being reviewed. 24-48 hours." },
   rejected: { icon: "close-circle", color: colors.danger, bg: colors.dangerBg, label: "Rejected", desc: "KYC was rejected. Please resubmit correct documents." },
+  draft: { icon: "document-text-outline", color: colors.accent, bg: colors.accentBg, label: "Documents Uploaded", desc: "Upload documents, then submit for review when ready." },
   not_submitted: { icon: "document-outline", color: colors.textMuted, bg: colors.input, label: "Not Submitted", desc: "Upload your documents to verify your identity." },
 };
 
