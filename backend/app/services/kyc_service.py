@@ -59,8 +59,7 @@ async def submit_kyc(db: Client, user_id: str) -> dict:
 
 
 async def upload_kyc_document(db: Client, user_id: str, document_type: str, storage_path: str) -> dict:
-    """Record a KYC document upload. Auto-creates KYC profile if needed."""
-    # Auto-create KYC profile if not exists
+    """Record a KYC document upload. Creates KYC profile only if needed, does NOT change status."""
     kyc_id = None
     try:
         kyc = (
@@ -80,7 +79,7 @@ async def upload_kyc_document(db: Client, user_id: str, document_type: str, stor
             db.table("kyc_profiles")
             .insert({
                 "user_id": user_id,
-                "status": "draft",
+                "status": "not_submitted",
                 "risk_level": "medium",
             })
             .execute()
