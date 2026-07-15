@@ -25,6 +25,7 @@ export default function ClientLayout() {
           <Stack.Screen name="accounts/create" />
           <Stack.Screen name="accounts/[id]" />
           <Stack.Screen name="kyc" />
+          <Stack.Screen name="market" />
         </Stack>
       </View>
       {!isWide && <ClientSidebar />}

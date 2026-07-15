@@ -16,6 +16,7 @@ const NAV: NavItem[] = [
   { icon: "grid-outline", label: "Dashboard", href: "/client" },
   { icon: "person-outline", label: "Profile", href: "/client/profile" },
   { icon: "wallet-outline", label: "Accounts", href: "/client/accounts" },
+  { icon: "stats-chart-outline", label: "Market", href: "/client/market" },
   { icon: "shield-checkmark-outline", label: "Verification", href: "/client/kyc" },
 ];
 

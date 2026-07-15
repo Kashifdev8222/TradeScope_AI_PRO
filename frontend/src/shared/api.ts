@@ -300,12 +300,69 @@ export const accountApi = {
 // KYC API
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Market Data API
+// ---------------------------------------------------------------------------
+
+export interface Instrument {
+  id: string;
+  symbol: string;
+  name: string;
+  asset_class: string;
+  exchange: string;
+  quote_currency: string;
+  base_currency: string;
+  status: string;
+}
+
+export interface Quote {
+  symbol: string;
+  asset_class: string;
+  bid: number;
+  ask: number;
+  last: number;
+  spread: number;
+  change_pct: number;
+  quote_currency: string;
+  timestamp: number;
+}
+
+export interface Candle {
+  symbol: string;
+  timeframe: string;
+  open_time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+export const marketApi = {
+  getInstruments: (assetClass?: string, search?: string) => {
+    const p = new URLSearchParams();
+    if (assetClass) p.set("asset_class", assetClass);
+    if (search) p.set("search", search);
+    return request<Instrument[]>(`/market/instruments?${p.toString()}`);
+  },
+
+  getInstrument: (symbol: string) =>
+    request<Instrument>(`/market/instruments/${symbol}`),
+
+  getQuotes: (symbols?: string) => {
+    const p = symbols ? `?symbols=${symbols}` : "";
+    return request<Quote[]>(`/market/quotes${p}`);
+  },
+
+  getCandles: (symbol: string, timeframe: string = "1h", limit: number = 100) =>
+    request<Candle[]>(`/market/candles?symbol=${symbol}&timeframe=${timeframe}&limit=${limit}`),
+
+  getAssetClasses: () => request<string[]>("/market/asset-classes"),
+};
+
 export const kycApi = {
   getStatus: () => request<any>("/client/kyc"),
-
-  submit: () =>
-    request<any>("/client/kyc", { method: "POST" }),
-
+  submit: () => request<any>("/client/kyc", { method: "POST" }),
   uploadFile: async (file: Blob, fileName: string, documentType: string) => {
     const token = useAuthStore.getState().tokens?.access_token;
     const fd = new FormData();
