@@ -226,14 +226,15 @@ async def list_kyc_reviews(
         query = query.in_("status", ["pending", "under_review"])
     result = query.order("submitted_at", desc=True).execute()
 
+    from app.config import settings
     import httpx
     kyc_list = []
     for row in (result.data or []):
         un, uc = "", ""
         try:
-            headers = {"apikey": db.supabase_key, "Authorization": f"Bearer {db.supabase_key}"}
-            url = f"{db.supabase_url}/rest/v1/user_profiles?select=full_name,client_code&id=eq.{row['user_id']}"
-            resp = httpx.get(url, headers=headers, timeout=10)
+            headers = {"apikey": settings.SUPABASE_SERVICE_ROLE_KEY, "Authorization": f"Bearer {settings.SUPABASE_SERVICE_ROLE_KEY}"}
+            url = f"{settings.SUPABASE_URL}/rest/v1/user_profiles?select=full_name,client_code&id=eq.{row['user_id']}"
+            resp = httpx.get(url, headers=headers, timeout=5)
             if resp.status_code == 200 and resp.json():
                 un = resp.json()[0].get("full_name", "")
                 uc = resp.json()[0].get("client_code", "")
@@ -252,20 +253,20 @@ async def get_kyc_detail(
     admin_id: str = Depends(require_role("super_admin", "compliance_admin")),
 ):
     """Get KYC detail with user info and documents."""
+    from app.config import settings
     import httpx
     kyc = db.table("kyc_profiles").select("*").eq("id", kyc_id).single().execute()
     if not kyc.data:
         raise HTTPException(status_code=404, detail="KYC not found")
 
-    # Get user info via direct REST API call (bypasses supabase-py RLS issues)
+    # Get user info via direct REST API
     user_info = {}
     try:
-        headers = {"apikey": auth_client.supabase_key, "Authorization": f"Bearer {auth_client.supabase_key}"}
-        url = f"{auth_client.supabase_url}/rest/v1/user_profiles?select=full_name,client_code,email,phone,country,auth_user_id&id=eq.{kyc.data['user_id']}"
-        resp = httpx.get(url, headers=headers, timeout=10)
+        headers = {"apikey": settings.SUPABASE_SERVICE_ROLE_KEY, "Authorization": f"Bearer {settings.SUPABASE_SERVICE_ROLE_KEY}"}
+        url = f"{settings.SUPABASE_URL}/rest/v1/user_profiles?select=full_name,client_code,email,phone,country,auth_user_id&id=eq.{kyc.data['user_id']}"
+        resp = httpx.get(url, headers=headers, timeout=5)
         if resp.status_code == 200 and resp.json():
             user_info = resp.json()[0]
-            # Get email via auth admin if not in profile
             if not user_info.get("email") and user_info.get("auth_user_id"):
                 try:
                     au = auth_client.auth.admin.get_user_by_id(user_info["auth_user_id"])
@@ -274,12 +275,11 @@ async def get_kyc_detail(
     except Exception:
         pass
 
-    # Documents — use public URLs (bucket is public)
+    # Documents with public URLs
     docs = db.table("kyc_documents").select("*").eq("kyc_profile_id", kyc_id).execute()
     docs_list = []
-    supabase_url = auth_client.supabase_url
     for d in (docs.data or []):
-        docs_list.append({**d, "preview_url": f"{supabase_url}/storage/v1/object/public/kyc-documents/{d['storage_path']}"})
+        docs_list.append({**d, "preview_url": f"{settings.SUPABASE_URL}/storage/v1/object/public/kyc-documents/{d['storage_path']}"})
 
     return {"kyc": {**kyc.data, "user_profiles": user_info}, "documents": docs_list}
 
