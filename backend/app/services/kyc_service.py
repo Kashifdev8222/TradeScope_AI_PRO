@@ -59,7 +59,9 @@ async def submit_kyc(db: Client, user_id: str) -> dict:
 
 
 async def upload_kyc_document(db: Client, user_id: str, document_type: str, storage_path: str) -> dict:
-    """Record a KYC document upload."""
+    """Record a KYC document upload. Auto-creates KYC profile if needed."""
+    # Auto-create KYC profile if not exists
+    kyc_id = None
     try:
         kyc = (
             db.table("kyc_profiles")
@@ -68,16 +70,29 @@ async def upload_kyc_document(db: Client, user_id: str, document_type: str, stor
             .single()
             .execute()
         )
+        if kyc.data:
+            kyc_id = kyc.data["id"]
     except Exception:
-        raise ValueError("KYC profile not found. Submit KYC first.")
+        pass
 
-    if not kyc.data:
-        raise ValueError("KYC profile not found. Submit KYC first.")
+    if not kyc_id:
+        result = (
+            db.table("kyc_profiles")
+            .insert({
+                "user_id": user_id,
+                "status": "pending",
+                "risk_level": "medium",
+            })
+            .execute()
+        )
+        kyc_id = result.data[0]["id"] if result.data else None
+        # Update user KYC status
+        db.table("user_profiles").update({"kyc_status": "pending"}).eq("id", user_id).execute()
 
     result = (
         db.table("kyc_documents")
         .insert({
-            "kyc_profile_id": kyc.data["id"],
+            "kyc_profile_id": kyc_id,
             "document_type": document_type,
             "storage_path": storage_path,
             "status": "uploaded",
