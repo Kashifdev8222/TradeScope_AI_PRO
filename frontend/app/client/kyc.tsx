@@ -50,19 +50,24 @@ export default function KYCScreen() {
 
       setUploading(true); setMsg("");
       const file = result.assets[0];
+
+      // Fetch the blob from the file URI (works on web + native)
+      const response = await fetch(file.uri);
+      const blob = await response.blob();
+
+      // Create FormData with proper File object
+      const fd = new FormData();
+      fd.append("file", blob, file.name || "document.jpg");
+      fd.append("document_type", docType);
+
       const res = await fetch("https://tradescope-ai-api.onrender.com/api/v1/client/kyc/documents", {
         method: "POST",
         headers: { Authorization: `Bearer ${useAuthStore.getState().tokens?.access_token}` },
-        body: (() => {
-          const fd = new FormData();
-          fd.append("file", { uri: file.uri, name: file.name, type: file.mimeType } as any);
-          fd.append("document_type", docType);
-          return fd;
-        })(),
+        body: fd,
       });
       if (res.ok) { setMsg("uploaded"); fetch(); }
       else { setMsg("err"); }
-    } catch { setMsg("err"); }
+    } catch (e) { setMsg("err"); }
     finally { setUploading(false); }
   };
 
