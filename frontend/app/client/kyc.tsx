@@ -3,72 +3,48 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "rea
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { kycApi } from "../../src/shared/api";
-import { useAuthStore } from "../../src/shared/stores/authStore";
 import ScreenContainer from "../../src/shared/components/ScreenContainer";
 import { colors, spacing, radius, fontSize, fontWeight } from "../../src/shared/theme";
 
-const STATUS: Record<string, { icon: any; color: string; bg: string; label: string; desc: string }> = {
-  approved: { icon: "checkmark-circle", color: colors.success, bg: colors.successBg, label: "Verified", desc: "Your identity has been verified." },
-  pending: { icon: "time-outline", color: colors.warning, bg: colors.warningBg, label: "Under Review", desc: "Your documents are being reviewed. 24-48 hours." },
-  under_review: { icon: "search-outline", color: colors.warning, bg: colors.warningBg, label: "Under Review", desc: "Your documents are being reviewed. 24-48 hours." },
-  rejected: { icon: "close-circle", color: colors.danger, bg: colors.dangerBg, label: "Rejected", desc: "KYC was rejected. Please resubmit correct documents." },
-  draft: { icon: "document-text-outline", color: colors.accent, bg: colors.accentBg, label: "Documents Uploaded", desc: "Upload documents, then submit for review when ready." },
-  not_submitted: { icon: "document-outline", color: colors.textMuted, bg: colors.input, label: "Not Submitted", desc: "Upload your documents to verify your identity." },
-};
-
 const DOC_TYPES = [
-  { key: "passport", label: "Passport / ID Card", icon: "card-outline" },
-  { key: "drivers_license", label: "Driver's License", icon: "car-outline" },
-  { key: "utility_bill", label: "Utility Bill", icon: "receipt-outline" },
-  { key: "bank_statement", label: "Bank Statement", icon: "document-text-outline" },
+  { key: "passport", label: "Government ID", desc: "Passport, driver's license, or national ID card", icon: "card-outline" },
+  { key: "utility_bill", label: "Proof of Address", desc: "Utility bill or bank statement (last 3 months)", icon: "receipt-outline" },
 ];
 
 export default function KYCScreen() {
-  const user = useAuthStore((s) => s.user);
   const [kyc, setKyc] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState("");
   const [msg, setMsg] = useState("");
 
   const fetch = async () => { try { setKyc(await kycApi.getStatus()); } catch {} finally { setLoading(false); } };
   useFocusEffect(useCallback(() => { fetch(); }, []));
 
-  const submit = async () => {
-    setSubmitting(true); setMsg("");
-    try { await kycApi.submit(); setMsg("ok"); fetch(); }
-    catch { setMsg("err"); } finally { setSubmitting(false); }
-  };
-
-  const createFileInput = (docType: string) => {
+  const pickAndUpload = async (docType: string) => {
     try {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = "image/*,application/pdf";
+      const input = document.createElement("input"); input.type = "file"; input.accept = "image/*,application/pdf";
       input.onchange = async (e: any) => {
-        const file = e.target?.files?.[0];
-        if (!file) return;
-        setUploading(true); setMsg("");
+        const file = e.target?.files?.[0]; if (!file) return;
+        setUploading(docType); setMsg("");
         try {
-          console.log("Uploading:", file.name, file.type, file.size);
           await kycApi.uploadFile(file, file.name, docType);
-          setMsg("uploaded");
+          // Auto-submit for review after first upload
+          try { await kycApi.submit(); } catch {}
+          setMsg("ok");
           fetch();
-        } catch (e: any) {
-          console.error("Upload failed:", e.message);
-          setMsg(e.message || "Upload failed");
-        }
-        finally { setUploading(false); }
+        } catch (e: any) { setMsg(e.message || "Upload failed"); }
+        finally { setUploading(""); }
       };
       input.click();
-    } catch (e: any) {
-      setMsg("File picker: " + (e.message || "error"));
-    }
+    } catch { setMsg("File picker not supported"); }
   };
 
-  // Only use KYC profile status, not user profile (user profile kyc_status is stale)
-  const sk = kyc?.kyc_profile?.status || "not_submitted";
-  const si = STATUS[sk] || STATUS.not_submitted;
+  const kycStatus = kyc?.kyc_profile?.status || "not_submitted";
+  const docs = kyc?.documents || [];
+
+  const isVerified = kycStatus === "approved";
+  const isPending = kycStatus === "pending" || kycStatus === "under_review";
+  const isRejected = kycStatus === "rejected";
 
   return (
     <ScreenContainer max={1400} scroll>
@@ -76,69 +52,76 @@ export default function KYCScreen() {
 
       {loading ? <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} /> : (
         <>
-          <View style={[s.banner, { backgroundColor: si.bg, borderColor: si.color }]}>
-            <Ionicons name={si.icon} size={44} color={si.color} />
-            <Text style={[s.bannerLabel, { color: si.color }]}>{si.label}</Text>
-            <Text style={s.bannerDesc}>{si.desc}</Text>
+          {/* Status Banner */}
+          <View style={[s.banner, isVerified ? { backgroundColor: colors.successBg, borderColor: colors.success } : isPending ? { backgroundColor: colors.warningBg, borderColor: colors.warning } : isRejected ? { backgroundColor: colors.dangerBg, borderColor: colors.danger } : { backgroundColor: colors.input, borderColor: colors.textMuted }]}>
+            <Ionicons
+              name={isVerified ? "checkmark-circle" : isPending ? "time-outline" : isRejected ? "close-circle" : "cloud-upload-outline"}
+              size={40}
+              color={isVerified ? colors.success : isPending ? colors.warning : isRejected ? colors.danger : colors.textMuted}
+            />
+            <Text style={[s.bannerTitle, { color: isVerified ? colors.success : isPending ? colors.warning : isRejected ? colors.danger : colors.textMuted }]}>
+              {isVerified ? "Verified" : isPending ? "Under Review" : isRejected ? "Rejected" : "Documents Required"}
+            </Text>
+            <Text style={s.bannerDesc}>
+              {isVerified ? "Your identity has been verified." :
+               isPending ? "Documents submitted. Our team will review them within 24-48 hours." :
+               isRejected ? "Verification failed. Please upload new documents." :
+               "Upload the required documents below to verify your identity."}
+            </Text>
           </View>
 
           {msg !== "" && (
-            <View style={[s.msg, msg === "ok" || msg === "uploaded" ? { backgroundColor: colors.successBg } : { backgroundColor: colors.dangerBg }]}>
-              <Ionicons name={msg === "ok" || msg === "uploaded" ? "checkmark-circle" : "alert-circle"} size={16} color={msg === "ok" || msg === "uploaded" ? colors.success : colors.danger} />
-              <Text style={{ color: msg === "ok" || msg === "uploaded" ? colors.success : colors.danger, fontSize: fontSize.sm, flex: 1 }}>
-                {msg === "ok" ? "KYC submitted for review!" : msg === "uploaded" ? "Document uploaded successfully!" : "Failed. Try again."}
+            <View style={[s.msg, msg === "ok" ? { backgroundColor: colors.successBg } : { backgroundColor: colors.dangerBg }]}>
+              <Ionicons name={msg === "ok" ? "checkmark-circle" : "alert-circle"} size={16} color={msg === "ok" ? colors.success : colors.danger} />
+              <Text style={{ color: msg === "ok" ? colors.success : colors.danger, fontSize: fontSize.sm, flex: 1 }}>
+                {msg === "ok" ? "Document uploaded and submitted for review!" : msg}
               </Text>
             </View>
           )}
 
-          {/* Upload Documents */}
-          {(sk !== "approved") && (
+          {/* Upload section — hidden only when verified */}
+          {!isVerified && (
             <View style={s.card}>
-              <Text style={s.cardTitle}>Upload Documents</Text>
-              <Text style={s.cardSub}>Select the type of document you want to upload:</Text>
+              <Text style={s.cardTitle}>{isPending ? "Add More Documents" : "Upload Documents"}</Text>
               <View style={s.uploadGrid}>
-                {DOC_TYPES.map((dt) => (
-                  <TouchableOpacity key={dt.key} style={s.uploadItem} onPress={() => createFileInput(dt.key)} disabled={uploading} activeOpacity={0.7}>
-                    <View style={s.uploadIcon}>
-                      <Ionicons name={dt.icon as any} size={22} color={colors.accent} />
-                    </View>
-                    <Text style={s.uploadLabel}>{dt.label}</Text>
-                    <Text style={s.uploadHint}>Tap to upload</Text>
-                  </TouchableOpacity>
-                ))}
+                {DOC_TYPES.map((dt) => {
+                  const existing = docs.find((d: any) => d.document_type === dt.key);
+                  return (
+                    <TouchableOpacity key={dt.key} style={s.uploadCard} onPress={() => pickAndUpload(dt.key)} disabled={uploading !== ""} activeOpacity={0.7}>
+                      <View style={[s.uploadIcon, existing && { backgroundColor: colors.successBg }]}>
+                        <Ionicons name={dt.icon as any} size={26} color={existing ? colors.success : colors.accent} />
+                      </View>
+                      <Text style={s.uploadLabel}>{dt.label}</Text>
+                      <Text style={s.uploadDesc}>{dt.desc}</Text>
+                      {existing ? (
+                        <View style={s.uploadBadge}><Ionicons name="checkmark-circle" size={14} color={colors.success} /><Text style={{ color: colors.success, fontSize: 11, fontWeight: fontWeight.semibold }}>Uploaded</Text></View>
+                      ) : (
+                        <Text style={s.uploadHint}>{uploading === dt.key ? "Uploading..." : "Tap to upload"}</Text>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
-              {uploading && <ActivityIndicator color={colors.accent} style={{ marginTop: 12 }} />}
+              {uploading !== "" && <ActivityIndicator color={colors.accent} style={{ marginTop: 12 }} />}
             </View>
           )}
 
-          {/* Required Documents */}
-          <View style={s.card}>
-            <Text style={s.cardTitle}>Requirements</Text>
-            <View style={s.docItem}><Ionicons name="checkmark-circle" size={20} color={colors.success} /><Text style={s.docText}>Government-issued photo ID (passport, driver's license, or national ID)</Text></View>
-            <View style={s.docItem}><Ionicons name="checkmark-circle" size={20} color={colors.success} /><Text style={s.docText}>Proof of address (utility bill or bank statement, last 3 months)</Text></View>
-            <View style={s.docItem}><Ionicons name="checkmark-circle" size={20} color={colors.success} /><Text style={s.docText}>Clear copies — all corners visible, no glare</Text></View>
-          </View>
-
-          {/* Uploaded Files */}
-          {kyc?.documents?.length > 0 && (
+          {/* Uploaded Documents Summary */}
+          {docs.length > 0 && (
             <View style={s.card}>
-              <Text style={s.cardTitle}>Uploaded Files ({kyc.documents.length})</Text>
-              {kyc.documents.map((d: any) => (
-                <View key={d.id} style={s.fileRow}>
-                  <Ionicons name="document-text-outline" size={18} color={colors.accent} />
-                  <Text style={{ color: colors.text, fontSize: fontSize.sm, flex: 1 }}>{d.document_type.replace(/_/g, " ")}</Text>
-                  <View style={[s.fileBadge, { backgroundColor: d.status === "uploaded" ? colors.successBg : colors.warningBg }]}>
-                    <Text style={{ color: d.status === "uploaded" ? colors.success : colors.warning, fontSize: 11, fontWeight: fontWeight.semibold }}>{d.status}</Text>
+              <Text style={s.cardTitle}>Your Documents ({docs.length})</Text>
+              {docs.map((d: any) => (
+                <View key={d.id} style={s.docRow}>
+                  <View style={[s.docIcon, d.status === "uploaded" ? { backgroundColor: colors.successBg } : { backgroundColor: colors.warningBg }]}>
+                    <Ionicons name="document-text-outline" size={20} color={d.status === "uploaded" ? colors.success : colors.warning} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.docName}>{d.document_type.replace(/_/g, " ")}</Text>
+                    <Text style={s.docStatus}>{d.status === "uploaded" ? "Submitted for review" : d.status}</Text>
                   </View>
                 </View>
               ))}
             </View>
-          )}
-
-          {(sk !== "approved") && (
-            <TouchableOpacity style={[s.btn, submitting && { opacity: 0.7 }]} onPress={submit} disabled={submitting} activeOpacity={0.7}>
-              {submitting ? <ActivityIndicator color="#fff" /> : <Text style={s.btnT}>Submit for Review</Text>}
-            </TouchableOpacity>
           )}
         </>
       )}
@@ -151,33 +134,28 @@ const s = StyleSheet.create({
   title: { fontSize: 24, fontWeight: fontWeight.bold, color: colors.text, marginBottom: spacing.lg },
 
   banner: { borderRadius: radius.xl, padding: spacing.xl, alignItems: "center", gap: spacing.sm, marginBottom: spacing.lg, borderWidth: 2 },
-  bannerLabel: { fontSize: fontSize.xl, fontWeight: fontWeight.bold },
+  bannerTitle: { fontSize: fontSize.xl, fontWeight: fontWeight.bold },
   bannerDesc: { fontSize: fontSize.sm, color: colors.textSecondary, textAlign: "center", lineHeight: 20 },
 
   msg: { flexDirection: "row", alignItems: "center", gap: 10, borderRadius: radius.md, padding: 14, marginBottom: spacing.lg },
 
   card: { backgroundColor: colors.card, borderRadius: radius.xl, padding: spacing.xl, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.cardBorder },
-  cardTitle: { fontSize: fontSize.md, fontWeight: fontWeight.semibold, color: colors.text, marginBottom: spacing.xs },
-  cardSub: { fontSize: fontSize.sm, color: colors.textSecondary, marginBottom: spacing.md },
+  cardTitle: { fontSize: fontSize.md, fontWeight: fontWeight.semibold, color: colors.text, marginBottom: spacing.md },
 
-  uploadGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  uploadItem: {
-    flex: 1, minWidth: 140, backgroundColor: colors.input,
-    borderRadius: radius.lg, padding: spacing.md,
-    alignItems: "center", gap: 6,
-    borderWidth: 1, borderColor: colors.inputBorder,
-    borderStyle: "dashed",
+  uploadGrid: { gap: 14 },
+  uploadCard: {
+    backgroundColor: colors.input, borderRadius: radius.lg, padding: spacing.lg,
+    flexDirection: "row", alignItems: "center", gap: 14,
+    borderWidth: 1.5, borderColor: colors.inputBorder, borderStyle: "dashed",
   },
-  uploadIcon: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.accentBg, alignItems: "center", justifyContent: "center" },
-  uploadLabel: { fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: colors.text, textAlign: "center" },
-  uploadHint: { fontSize: 10, color: colors.textMuted },
+  uploadIcon: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.accentBg, alignItems: "center", justifyContent: "center" },
+  uploadLabel: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: colors.text },
+  uploadDesc: { fontSize: 11, color: colors.textMuted, flex: 1 },
+  uploadBadge: { flexDirection: "row", alignItems: "center", gap: 4 },
+  uploadHint: { fontSize: 11, color: colors.accent, fontWeight: fontWeight.medium },
 
-  docItem: { flexDirection: "row", alignItems: "flex-start", gap: 12, marginBottom: 12 },
-  docText: { fontSize: fontSize.sm, color: colors.text, flex: 1, lineHeight: 20 },
-
-  fileRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.divider },
-  fileBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full },
-
-  btn: { backgroundColor: colors.accent, borderRadius: radius.md, paddingVertical: 16, alignItems: "center", marginTop: spacing.md },
-  btnT: { color: "#fff", fontSize: fontSize.md, fontWeight: fontWeight.semibold },
+  docRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  docIcon: { width: 40, height: 40, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
+  docName: { fontSize: fontSize.sm, fontWeight: fontWeight.medium, color: colors.text, textTransform: "capitalize" },
+  docStatus: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
 });
