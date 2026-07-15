@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, ScrollView } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,12 +25,7 @@ export default function ClientSidebar() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const { width } = useWindowDimensions();
-  const [isAdmin, setIsAdmin] = useState(false);
   const isWide = width >= 768;
-
-  useEffect(() => {
-    authApi.isAdmin().then(r => setIsAdmin(r.is_admin)).catch(() => {});
-  }, []);
 
   const doLogout = async () => {
     try { await authApi.logout(); } catch {}
@@ -49,11 +43,6 @@ export default function ClientSidebar() {
             </TouchableOpacity>
           );
         })}
-        {isAdmin && (
-          <TouchableOpacity style={mob.tab} onPress={() => router.push("/admin")}>
-            <Ionicons name="shield-outline" size={21} color={pathname.startsWith("/admin") ? colors.accent : colors.textMuted} />
-          </TouchableOpacity>
-        )}
       </View>
     );
   }
@@ -99,17 +88,6 @@ export default function ClientSidebar() {
           );
         })}
 
-        {isAdmin && (
-          <>
-            <Text style={[s.sectionLabel, { marginTop: spacing.lg }]}>ADMINISTRATION</Text>
-            <TouchableOpacity style={[s.nav, pathname.startsWith("/admin") && s.navActive]} onPress={() => router.push("/admin")}>
-              <View style={[s.navIcon, pathname.startsWith("/admin") && s.navIconActive]}>
-                <Ionicons name="shield-outline" size={18} color={pathname.startsWith("/admin") ? "#fff" : colors.textMuted} />
-              </View>
-              <Text style={[s.navText, pathname.startsWith("/admin") && s.navTextActive]}>Admin Console</Text>
-            </TouchableOpacity>
-          </>
-        )}
       </ScrollView>
 
       {/* Logout */}

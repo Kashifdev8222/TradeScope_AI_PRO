@@ -86,10 +86,6 @@ export default function AdminSidebar() {
         </View>
       </ScrollView>
 
-      <TouchableOpacity style={s.back} onPress={() => router.push("/client")}>
-        <Ionicons name="arrow-back-outline" size={18} color={colors.textMuted} />
-        <Text style={s.backText}>Back to Client</Text>
-      </TouchableOpacity>
       <TouchableOpacity style={s.logout} onPress={doLogout}>
         <Ionicons name="log-out-outline" size={18} color={colors.danger} />
         <Text style={s.logoutText}>Sign Out</Text>
