@@ -49,24 +49,30 @@ export default function KYCScreen() {
         if (!file) return;
         setUploading(true); setMsg("");
         try {
+          console.log("Uploading:", file.name, "type:", file.type, "size:", file.size);
           const fd = new FormData();
           fd.append("file", file);
           fd.append("document_type", docType);
           const token = useAuthStore.getState().tokens?.access_token;
+          console.log("Token:", token?.substring(0, 20) + "...");
           const res = await fetch("https://tradescope-ai-api.onrender.com/api/v1/client/kyc/documents", {
             method: "POST",
             headers: { Authorization: `Bearer ${token}` },
             body: fd,
           });
           const text = await res.text();
+          console.log("Server response:", res.status, text);
           if (res.ok) { setMsg("uploaded"); fetch(); }
-          else { setMsg(`Server: ${text}`); }
-        } catch (e: any) { setMsg(e.message || "Upload failed"); }
+          else { setMsg(`${res.status}: ${text.substring(0, 100)}`); }
+        } catch (e: any) {
+          console.error("Upload error:", e);
+          setMsg(e.message || "Network error");
+        }
         finally { setUploading(false); }
       };
       input.click();
     } catch (e: any) {
-      setMsg("File picker not supported on this device");
+      setMsg("File picker error: " + (e.message || "unknown"));
     }
   };
 
