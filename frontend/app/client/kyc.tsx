@@ -177,8 +177,8 @@ export default function KYCScreen() {
       )}
       {/* Preview Modal */}
       <Modal visible={previewUrl !== ""} transparent animationType="fade" onRequestClose={() => setPreviewUrl("")}>
-        <View style={s.modalBg}>
-          <View style={s.modalCard}>
+        <TouchableOpacity style={s.modalBg} activeOpacity={1} onPress={() => setPreviewUrl("")}>
+          <View style={s.modalCard} onStartShouldSetResponder={() => true}>
             <View style={s.modalHead}>
               <Text style={s.modalTitle}>Document Preview</Text>
               <TouchableOpacity onPress={() => setPreviewUrl("")}>
@@ -186,8 +186,13 @@ export default function KYCScreen() {
               </TouchableOpacity>
             </View>
             <Image source={{ uri: previewUrl }} style={{ width: "100%", height: 400, resizeMode: "contain" }} />
+            <View style={{ padding: spacing.lg }}>
+              <TouchableOpacity style={s.modalCloseBtn} onPress={() => setPreviewUrl("")}>
+                <Text style={{ color: "#fff", fontWeight: fontWeight.semibold }}>Close Preview</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </TouchableOpacity>
       </Modal>
 
       <View style={{ height: 40 }} />
@@ -231,4 +236,5 @@ const s = StyleSheet.create({
   modalCard: { width: "100%", maxWidth: 700, backgroundColor: colors.card, borderRadius: radius.xl, overflow: "hidden" },
   modalHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: spacing.lg },
   modalTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: colors.text },
+  modalCloseBtn: { backgroundColor: colors.accent, borderRadius: radius.md, paddingVertical: 14, alignItems: "center" },
 });
