@@ -20,7 +20,16 @@ async def get_kyc_status(db: Client, user_id: str) -> dict:
 
 
 async def submit_kyc(db: Client, user_id: str) -> dict:
-    """Submit KYC for review. Updates existing profile or creates one."""
+    """Submit KYC for review. Updates existing profile or creates one. Stores user info."""
+    # Get user info to store alongside KYC
+    full_name, client_code, email = "", "", ""
+    try:
+        up = db.table("user_profiles").select("full_name,client_code,auth_user_id").eq("id", user_id).execute()
+        if up.data:
+            full_name = up.data[0].get("full_name", "")
+            client_code = up.data[0].get("client_code", "")
+    except: pass
+
     result = (
         db.table("kyc_profiles")
         .select("id, status")
@@ -34,6 +43,9 @@ async def submit_kyc(db: Client, user_id: str) -> dict:
         db.table("kyc_profiles").update({
             "status": "pending",
             "submitted_at": "now()",
+            "full_name": full_name,
+            "client_code": client_code,
+            "email": email,
         }).eq("id", kyc_id).execute()
     else:
         new = (
@@ -43,6 +55,9 @@ async def submit_kyc(db: Client, user_id: str) -> dict:
                 "status": "pending",
                 "risk_level": "medium",
                 "submitted_at": "now()",
+                "full_name": full_name,
+                "client_code": client_code,
+                "email": email,
             })
             .execute()
         )
@@ -72,12 +87,22 @@ async def upload_kyc_document(db: Client, user_id: str, document_type: str, stor
         pass
 
     if not kyc_id:
+        # Store user info alongside KYC
+        full_name, client_code = "", ""
+        try:
+            up = db.table("user_profiles").select("full_name,client_code").eq("id", user_id).execute()
+            if up.data:
+                full_name = up.data[0].get("full_name", "")
+                client_code = up.data[0].get("client_code", "")
+        except: pass
         result = (
             db.table("kyc_profiles")
             .insert({
                 "user_id": user_id,
                 "status": "not_submitted",
                 "risk_level": "medium",
+                "full_name": full_name,
+                "client_code": client_code,
             })
             .execute()
         )

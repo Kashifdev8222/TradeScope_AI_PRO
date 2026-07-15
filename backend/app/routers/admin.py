@@ -226,22 +226,11 @@ async def list_kyc_reviews(
         query = query.in_("status", ["pending", "under_review"])
     result = query.order("submitted_at", desc=True).execute()
 
-    from app.config import settings
-    import httpx
     kyc_list = []
     for row in (result.data or []):
-        un, uc = "", ""
-        try:
-            headers = {"apikey": settings.SUPABASE_SERVICE_ROLE_KEY, "Authorization": f"Bearer {settings.SUPABASE_SERVICE_ROLE_KEY}"}
-            url = f"{settings.SUPABASE_URL}/rest/v1/user_profiles?select=full_name,client_code&id=eq.{row['user_id']}"
-            resp = httpx.get(url, headers=headers, timeout=5)
-            if resp.status_code == 200 and resp.json():
-                un = resp.json()[0].get("full_name", "")
-                uc = resp.json()[0].get("client_code", "")
-        except: pass
         kyc_list.append({"id": row["id"], "user_id": row["user_id"], "status": row["status"],
                          "risk_level": row.get("risk_level", "medium"), "submitted_at": row.get("submitted_at"),
-                         "full_name": un, "client_code": uc})
+                         "full_name": row.get("full_name", ""), "client_code": row.get("client_code", "")})
     return kyc_list
 
 
@@ -254,26 +243,19 @@ async def get_kyc_detail(
 ):
     """Get KYC detail with user info and documents."""
     from app.config import settings
-    import httpx
     kyc = db.table("kyc_profiles").select("*").eq("id", kyc_id).single().execute()
     if not kyc.data:
         raise HTTPException(status_code=404, detail="KYC not found")
 
-    # Get user info via direct REST API
-    user_info = {}
-    try:
-        headers = {"apikey": settings.SUPABASE_SERVICE_ROLE_KEY, "Authorization": f"Bearer {settings.SUPABASE_SERVICE_ROLE_KEY}"}
-        url = f"{settings.SUPABASE_URL}/rest/v1/user_profiles?select=full_name,client_code,email,phone,country,auth_user_id&id=eq.{kyc.data['user_id']}"
-        resp = httpx.get(url, headers=headers, timeout=5)
-        if resp.status_code == 200 and resp.json():
-            user_info = resp.json()[0]
-            if not user_info.get("email") and user_info.get("auth_user_id"):
-                try:
-                    au = auth_client.auth.admin.get_user_by_id(user_info["auth_user_id"])
-                    if au and au.user: user_info["email"] = au.user.email or ""
-                except: pass
-    except Exception:
-        pass
+    # User info is now stored directly in kyc_profiles
+    row = kyc.data
+    user_info = {
+        "full_name": row.get("full_name", ""),
+        "client_code": row.get("client_code", ""),
+        "email": row.get("email", ""),
+        "phone": row.get("phone", ""),
+        "country": row.get("country", ""),
+    }
 
     # Documents with public URLs
     docs = db.table("kyc_documents").select("*").eq("kyc_profile_id", kyc_id).execute()
