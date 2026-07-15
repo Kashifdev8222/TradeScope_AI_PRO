@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Modal, Image, TextInput } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Modal, Image, TextInput, ScrollView } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../src/shared/stores/authStore";
@@ -102,7 +102,7 @@ export default function AdminKYCScreen() {
               </TouchableOpacity>
             </View>
 
-            <View style={s.modalBody}>
+            <ScrollView style={s.modalBody} showsVerticalScrollIndicator={true}>
               {/* User info */}
               <View style={s.userInfo}>
                 <Info label="Name" value={detail?.kyc?.user_profiles?.full_name} />
@@ -159,7 +159,7 @@ export default function AdminKYCScreen() {
                   <Text style={{ color: "#fff", fontWeight: fontWeight.semibold }}>Approve</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -237,6 +237,6 @@ const s = StyleSheet.create({
 
   // Image preview
   imgModalBg: { flex: 1, backgroundColor: "rgba(0,0,0,0.85)", justifyContent: "center", alignItems: "center" },
-  imgClose: { position: "absolute", top: 40, right: 20, zIndex: 10 },
+  imgClose: { position: "absolute", top: 30, right: 16, zIndex: 10, padding: 8 },
   imgPreview: { width: "90%", height: "70%", resizeMode: "contain", borderRadius: radius.lg },
 });
