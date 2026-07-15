@@ -77,6 +77,26 @@ async def get_candles(
 # ---------------------------------------------------------------------------
 # GET /market/asset-classes
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# GET /market/status
+# ---------------------------------------------------------------------------
+@router.get("/status")
+async def get_market_status(
+    db: Client = Depends(get_supabase_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """Get market status — open/closed, active instruments count."""
+    instruments = await market_service.list_instruments(db, status="active")
+    return {
+        "status": "open",
+        "mode": "demo",
+        "provider": "simulation",
+        "active_instruments": len(instruments),
+        "asset_classes": await market_service.get_asset_classes(db),
+        "server_time": int(__import__("time").time() * 1000),
+    }
+
+
 @router.get("/asset-classes")
 async def get_asset_classes(
     db: Client = Depends(get_supabase_db),
