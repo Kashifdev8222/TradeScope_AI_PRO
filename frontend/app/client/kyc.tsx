@@ -40,31 +40,34 @@ export default function KYCScreen() {
   };
 
   const createFileInput = (docType: string) => {
-    // Create a native HTML file input for web
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*,application/pdf";
-    input.onchange = async (e: any) => {
-      const file = e.target?.files?.[0];
-      if (!file) return;
-      setUploading(true); setMsg("");
-      try {
-        const fd = new FormData();
-        fd.append("file", file);
-        fd.append("document_type", docType);
-
-        const token = useAuthStore.getState().tokens?.access_token;
-        const res = await fetch("https://tradescope-ai-api.onrender.com/api/v1/client/kyc/documents", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: fd,
-        });
-        if (res.ok) { setMsg("uploaded"); fetch(); }
-        else { const d = await res.text(); setMsg(`Error ${res.status}: ${d}`); }
-      } catch (e: any) { setMsg(`Failed: ${e.message}`); }
-      finally { setUploading(false); }
-    };
-    input.click();
+    try {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*,application/pdf";
+      input.onchange = async (e: any) => {
+        const file = e.target?.files?.[0];
+        if (!file) return;
+        setUploading(true); setMsg("");
+        try {
+          const fd = new FormData();
+          fd.append("file", file);
+          fd.append("document_type", docType);
+          const token = useAuthStore.getState().tokens?.access_token;
+          const res = await fetch("https://tradescope-ai-api.onrender.com/api/v1/client/kyc/documents", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: fd,
+          });
+          const text = await res.text();
+          if (res.ok) { setMsg("uploaded"); fetch(); }
+          else { setMsg(`Server: ${text}`); }
+        } catch (e: any) { setMsg(e.message || "Upload failed"); }
+        finally { setUploading(false); }
+      };
+      input.click();
+    } catch (e: any) {
+      setMsg("File picker not supported on this device");
+    }
   };
 
   const sk = kyc?.kyc_profile?.status || user?.kyc_status || "not_submitted";
