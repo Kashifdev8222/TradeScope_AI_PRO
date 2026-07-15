@@ -2,11 +2,13 @@
 TradeScope AI — KYC Router
 Endpoints: /api/v1/client/kyc/*
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+import uuid
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from supabase import Client
 
-from app.dependencies import get_supabase_db, get_profile_id
+from app.dependencies import get_supabase_db, get_supabase_auth, get_profile_id
 from app.services import kyc_service
+from app.config import settings
 
 router = APIRouter(prefix="/client/kyc", tags=["KYC"])
 
@@ -48,30 +50,42 @@ async def submit_kyc(
 # ---------------------------------------------------------------------------
 @router.post("/documents", status_code=status.HTTP_201_CREATED)
 async def upload_kyc_document(
-    body: dict,
+    file: UploadFile = File(...),
+    document_type: str = Form(...),
     user_id: str = Depends(get_profile_id),
     db: Client = Depends(get_supabase_db),
+    auth_client: Client = Depends(get_supabase_auth),
 ):
-    """
-    Record a KYC document upload.
-    Expected: {"document_type": "passport", "storage_path": "kyc/user_id/passport.jpg"}
-    """
-    doc_type = body.get("document_type")
-    storage_path = body.get("storage_path")
-    if not doc_type or not storage_path:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="document_type and storage_path required",
-        )
+    """Upload a KYC document file to Supabase Storage."""
 
     valid_types = ["passport", "drivers_license", "utility_bill", "bank_statement", "national_id", "other"]
-    if doc_type not in valid_types:
+    if document_type not in valid_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"document_type must be one of: {', '.join(valid_types)}",
         )
 
+    # Read file content
+    contents = await file.read()
+    if len(contents) > 10 * 1024 * 1024:  # 10MB limit
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File too large (max 10MB)")
+
+    # Generate unique file path
+    ext = file.filename.rsplit(".", 1)[-1] if file.filename and "." in file.filename else "jpg"
+    storage_path = f"kyc/{user_id}/{uuid.uuid4()}.{ext}"
+
+    # Upload to Supabase Storage using admin client
     try:
-        return await kyc_service.upload_kyc_document(db, user_id, doc_type, storage_path)
+        auth_client.storage.from_("kyc-documents").upload(
+            storage_path,
+            contents,
+            {"content-type": file.content_type or "application/octet-stream"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Upload failed: {str(e)}")
+
+    # Record in database
+    try:
+        return await kyc_service.upload_kyc_document(db, user_id, document_type, storage_path)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
