@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { kycApi } from "../../src/shared/api";
@@ -23,6 +23,7 @@ export default function KYCScreen() {
   const [uploading, setUploading] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState("");
+  const [previewUrl, setPreviewUrl] = useState("");
 
   const fetch = async () => { try { setKyc(await kycApi.getStatus()); } catch {} finally { setLoading(false); } };
   useFocusEffect(useCallback(() => { fetch(); }, []));
@@ -54,17 +55,9 @@ export default function KYCScreen() {
     finally { setSubmitting(false); }
   };
 
-  // Preview by opening Supabase storage URL directly
+  // Preview in modal
   const previewDoc = (storagePath: string) => {
-    console.log("Preview path:", storagePath);
-    const url = `https://dzvsdphddukzxqamzktc.supabase.co/storage/v1/object/public/kyc-documents/${storagePath}`;
-    console.log("Opening:", url);
-    try {
-      window.open(url, "_blank");
-    } catch (e: any) {
-      console.error("Preview error:", e);
-      setMsg("Preview: " + (e.message || "error"));
-    }
+    setPreviewUrl(`https://dzvsdphddukzxqamzktc.supabase.co/storage/v1/object/public/kyc-documents/${storagePath}`);
   };
 
   const kycStatus = kyc?.kyc_profile?.status || "not_submitted";
@@ -126,27 +119,29 @@ export default function KYCScreen() {
                     <View style={{ flex: 1 }}>
                       <Text style={s.docTypeLabel}>{dt.label}</Text>
                       {existing.length > 0 ? (
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
                           <View style={[s.dot, { backgroundColor: colors.success }]} />
                           <Text style={{ color: colors.success, fontSize: 12 }}>Uploaded</Text>
-                          {/* Preview button */}
-                          <TouchableOpacity onPress={() => previewDoc(existing[0].storage_path)} style={s.previewLink}>
-                            <Ionicons name="eye-outline" size={14} color={colors.accent} />
-                            <Text style={{ color: colors.accent, fontSize: 11 }}>View</Text>
-                          </TouchableOpacity>
                         </View>
                       ) : (
                         <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2 }}>Not uploaded</Text>
                       )}
                     </View>
-                    <TouchableOpacity
-                      style={[s.uploadBtn, existing.length > 0 && { backgroundColor: colors.accentBg, borderColor: colors.accent }]}
-                      onPress={() => uploadFile(dt.key)}
-                      disabled={uploading !== ""} activeOpacity={0.7}>
-                      {uploading === dt.key ? <ActivityIndicator color={colors.accent} size="small" /> :
-                       existing.length > 0 ? <Text style={{ color: colors.accent, fontSize: 11, fontWeight: fontWeight.semibold }}>Update</Text> :
-                       <Text style={{ color: colors.accent, fontSize: 11, fontWeight: fontWeight.semibold }}>Upload</Text>}
-                    </TouchableOpacity>
+                    {/* Action buttons */}
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                      {existing.length > 0 && (
+                        <TouchableOpacity onPress={() => previewDoc(existing[0].storage_path)} style={[s.actionBtn, { borderColor: colors.accent }]}>
+                          <Ionicons name="eye-outline" size={15} color={colors.accent} />
+                        </TouchableOpacity>
+                      )}
+                      <TouchableOpacity
+                        style={[s.actionBtn, existing.length > 0 ? { borderColor: colors.accent } : { borderColor: colors.inputBorder }]}
+                        onPress={() => uploadFile(dt.key)}
+                        disabled={uploading !== ""} activeOpacity={0.7}>
+                        {uploading === dt.key ? <ActivityIndicator color={colors.accent} size="small" /> :
+                         <Ionicons name={existing.length > 0 ? "sync-outline" : "cloud-upload-outline"} size={15} color={colors.accent} />}
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 );
               })}
@@ -173,6 +168,21 @@ export default function KYCScreen() {
           )}
         </>
       )}
+      {/* Preview Modal */}
+      <Modal visible={previewUrl !== ""} transparent animationType="fade" onRequestClose={() => setPreviewUrl("")}>
+        <View style={s.modalBg}>
+          <View style={s.modalCard}>
+            <View style={s.modalHead}>
+              <Text style={s.modalTitle}>Document Preview</Text>
+              <TouchableOpacity onPress={() => setPreviewUrl("")}>
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+            <Image source={{ uri: previewUrl }} style={{ width: "100%", height: 400, resizeMode: "contain" }} />
+          </View>
+        </View>
+      </Modal>
+
       <View style={{ height: 40 }} />
     </ScreenContainer>
   );
@@ -193,12 +203,19 @@ const s = StyleSheet.create({
   docTypeIcon: { width: 44, height: 44, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
   docTypeLabel: { fontSize: fontSize.sm, fontWeight: fontWeight.medium, color: colors.text },
   dot: { width: 7, height: 7, borderRadius: 4 },
-  previewLink: { flexDirection: "row", alignItems: "center", gap: 3, marginLeft: 8 },
 
-  uploadBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.inputBorder, backgroundColor: colors.input, minWidth: 72, alignItems: "center" },
+  actionBtn: {
+    width: 34, height: 34, borderRadius: radius.sm,
+    borderWidth: 1.5, alignItems: "center", justifyContent: "center",
+  },
 
   submitBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: colors.accent, borderRadius: radius.md, paddingVertical: 16, marginTop: spacing.sm },
   submitBtnT: { color: "#fff", fontSize: fontSize.md, fontWeight: fontWeight.semibold },
   hint: { flexDirection: "row", alignItems: "center", gap: 8, padding: spacing.md, marginTop: spacing.sm },
   hintT: { color: colors.textMuted, fontSize: fontSize.sm, flex: 1 },
+
+  modalBg: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", alignItems: "center", padding: 20 },
+  modalCard: { width: "100%", maxWidth: 700, backgroundColor: colors.card, borderRadius: radius.xl, overflow: "hidden" },
+  modalHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: spacing.lg },
+  modalTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: colors.text },
 });
