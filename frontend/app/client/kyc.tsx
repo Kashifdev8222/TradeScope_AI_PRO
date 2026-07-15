@@ -50,24 +50,36 @@ export default function KYCScreen() {
 
       setUploading(true); setMsg("");
       const file = result.assets[0];
+      console.log("Picked file:", file.name, file.mimeType, file.uri);
 
-      // Fetch the blob from the file URI (works on web + native)
-      const response = await fetch(file.uri);
-      const blob = await response.blob();
+      // Fetch the blob from the file URI
+      const blobRes = await fetch(file.uri);
+      const blob = await blobRes.blob();
+      console.log("Blob size:", blob.size, "type:", blob.type);
 
-      // Create FormData with proper File object
+      // Create FormData
       const fd = new FormData();
       fd.append("file", blob, file.name || "document.jpg");
       fd.append("document_type", docType);
 
+      const token = useAuthStore.getState().tokens?.access_token;
+      console.log("Token exists:", !!token);
+
       const res = await fetch("https://tradescope-ai-api.onrender.com/api/v1/client/kyc/documents", {
         method: "POST",
-        headers: { Authorization: `Bearer ${useAuthStore.getState().tokens?.access_token}` },
+        headers: { Authorization: `Bearer ${token}` },
         body: fd,
       });
+
+      const data = await res.text();
+      console.log("Upload response:", res.status, data);
+
       if (res.ok) { setMsg("uploaded"); fetch(); }
-      else { setMsg("err"); }
-    } catch (e) { setMsg("err"); }
+      else { setMsg(`Error ${res.status}: ${data}`); }
+    } catch (e: any) {
+      console.error("Upload error:", e.message || e);
+      setMsg(`Failed: ${e.message || "Unknown error"}`);
+    }
     finally { setUploading(false); }
   };
 
