@@ -77,7 +77,13 @@ export default function RegisterScreen() {
     setLoading(true);
     try {
       const r = await authApi.register({ email: email.trim(), password, full_name: fullName.trim(), phone: phone.trim() ? `${country.dial}${phone.trim()}` : undefined, country: country.code, accept_terms: true, accept_risk_disclosure: true });
-      if (r.tokens.access_token) { setAuth(r.user, r.tokens); reset(); router.replace("/client"); }
+      if (r.tokens.access_token) {
+        setAuth(r.user, r.tokens); reset();
+        try {
+          const check = await authApi.isAdmin();
+          router.replace(check.is_admin ? "/admin" : "/client");
+        } catch { router.replace("/client"); }
+      }
       else { setErrors({ form: "Account created! You can now sign in." }); reset(); }
     } catch (err: any) { setErrors({ form: err.message || "Registration failed." }); } finally { setLoading(false); }
   };

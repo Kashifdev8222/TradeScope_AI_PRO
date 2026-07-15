@@ -32,7 +32,14 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const r = await authApi.login(email.trim(), password);
-      if (r.tokens.access_token) { setAuth(r.user, r.tokens); router.replace("/client"); }
+      if (r.tokens.access_token) {
+        setAuth(r.user, r.tokens);
+        // Redirect admin users to admin console, clients to dashboard
+        try {
+          const check = await authApi.isAdmin();
+          router.replace(check.is_admin ? "/admin" : "/client");
+        } catch { router.replace("/client"); }
+      }
       else setErrors({ form: "Please verify your email first." });
     } catch (err: any) { setErrors({ form: err.message || "Invalid credentials." }); }
     finally { setLoading(false); }
