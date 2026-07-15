@@ -80,14 +80,12 @@ async def upload_kyc_document(db: Client, user_id: str, document_type: str, stor
             db.table("kyc_profiles")
             .insert({
                 "user_id": user_id,
-                "status": "pending",
+                "status": "draft",
                 "risk_level": "medium",
             })
             .execute()
         )
         kyc_id = result.data[0]["id"] if result.data else None
-        # Update user KYC status
-        db.table("user_profiles").update({"kyc_status": "pending"}).eq("id", user_id).execute()
 
     result = (
         db.table("kyc_documents")
