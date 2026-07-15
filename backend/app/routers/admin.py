@@ -226,15 +226,17 @@ async def list_kyc_reviews(
         query = query.in_("status", ["pending", "under_review"])
     result = query.order("submitted_at", desc=True).execute()
 
+    import httpx
     kyc_list = []
     for row in (result.data or []):
-        # Fetch user info from user_profiles
         un, uc = "", ""
         try:
-            u = db.table("user_profiles").select("full_name,client_code").eq("id", row["user_id"]).execute()
-            if u.data and len(u.data) > 0:
-                un = u.data[0].get("full_name", "")
-                uc = u.data[0].get("client_code", "")
+            headers = {"apikey": db.supabase_key, "Authorization": f"Bearer {db.supabase_key}"}
+            url = f"{db.supabase_url}/rest/v1/user_profiles?select=full_name,client_code&id=eq.{row['user_id']}"
+            resp = httpx.get(url, headers=headers, timeout=10)
+            if resp.status_code == 200 and resp.json():
+                un = resp.json()[0].get("full_name", "")
+                uc = resp.json()[0].get("client_code", "")
         except: pass
         kyc_list.append({"id": row["id"], "user_id": row["user_id"], "status": row["status"],
                          "risk_level": row.get("risk_level", "medium"), "submitted_at": row.get("submitted_at"),
@@ -250,32 +252,34 @@ async def get_kyc_detail(
     admin_id: str = Depends(require_role("super_admin", "compliance_admin")),
 ):
     """Get KYC detail with user info and documents."""
+    import httpx
     kyc = db.table("kyc_profiles").select("*").eq("id", kyc_id).single().execute()
     if not kyc.data:
         raise HTTPException(status_code=404, detail="KYC not found")
 
-    # User info — use auth_client which also has service_role
+    # Get user info via direct REST API call (bypasses supabase-py RLS issues)
     user_info = {}
     try:
-        u = auth_client.table("user_profiles").select("full_name,client_code,email,phone,country").eq("id", kyc.data["user_id"]).execute()
-        if u.data and len(u.data) > 0: user_info = u.data[0]
-    except Exception as e:
-        # Fallback: try db client
-        try:
-            u = db.table("user_profiles").select("full_name,client_code,email,phone,country").eq("id", kyc.data["user_id"]).execute()
-            if u.data and len(u.data) > 0: user_info = u.data[0]
-        except: pass
+        headers = {"apikey": auth_client.supabase_key, "Authorization": f"Bearer {auth_client.supabase_key}"}
+        url = f"{auth_client.supabase_url}/rest/v1/user_profiles?select=full_name,client_code,email,phone,country,auth_user_id&id=eq.{kyc.data['user_id']}"
+        resp = httpx.get(url, headers=headers, timeout=10)
+        if resp.status_code == 200 and resp.json():
+            user_info = resp.json()[0]
+            # Get email via auth admin if not in profile
+            if not user_info.get("email") and user_info.get("auth_user_id"):
+                try:
+                    au = auth_client.auth.admin.get_user_by_id(user_info["auth_user_id"])
+                    if au and au.user: user_info["email"] = au.user.email or ""
+                except: pass
+    except Exception:
+        pass
 
-    # Documents with signed URLs
+    # Documents — use public URLs (bucket is public)
     docs = db.table("kyc_documents").select("*").eq("kyc_profile_id", kyc_id).execute()
     docs_list = []
+    supabase_url = auth_client.supabase_url
     for d in (docs.data or []):
-        url = ""
-        try:
-            s = auth_client.storage.from_("kyc-documents").create_signed_url(d["storage_path"], 600)
-            url = s.get("signedURL", "") if isinstance(s, dict) else ""
-        except: pass
-        docs_list.append({**d, "preview_url": url})
+        docs_list.append({**d, "preview_url": f"{supabase_url}/storage/v1/object/public/kyc-documents/{d['storage_path']}"})
 
     return {"kyc": {**kyc.data, "user_profiles": user_info}, "documents": docs_list}
 

@@ -130,12 +130,10 @@ export default function AdminKYCScreen() {
                   <View style={[s.docStatus, doc.status === "uploaded" ? { backgroundColor: colors.successBg } : { backgroundColor: colors.warningBg }]}>
                     <Text style={{ color: doc.status === "uploaded" ? colors.success : colors.warning, fontSize: 11 }}>{doc.status}</Text>
                   </View>
-                  {doc.preview_url ? (
-                    <TouchableOpacity style={s.viewLink} onPress={() => setPreviewUrl(doc.preview_url)}>
-                      <Ionicons name="eye-outline" size={16} color={colors.accent} />
-                      <Text style={{ color: colors.accent, fontSize: 12, fontWeight: fontWeight.semibold }}>View</Text>
-                    </TouchableOpacity>
-                  ) : null}
+                  <TouchableOpacity style={s.viewLink} onPress={() => setPreviewUrl(doc.preview_url || "")}>
+                    <Ionicons name="eye-outline" size={16} color={colors.accent} />
+                    <Text style={{ color: colors.accent, fontSize: 12, fontWeight: fontWeight.semibold }}>View</Text>
+                  </TouchableOpacity>
                 </View>
               ))}
 
@@ -176,9 +174,9 @@ export default function AdminKYCScreen() {
       {/* Image Preview Modal */}
       <Modal visible={previewUrl !== ""} transparent animationType="fade" onRequestClose={() => setPreviewUrl("")}>
         <TouchableOpacity style={s.imgModalBg} activeOpacity={1} onPress={() => setPreviewUrl("")}>
-          <View style={s.imgContainer}>
+          <View style={s.imgContainer} onStartShouldSetResponder={() => true}>
             <TouchableOpacity style={s.imgClose} onPress={() => setPreviewUrl("")}>
-              <Ionicons name="close-circle" size={32} color="#fff" />
+              <Ionicons name="close-circle" size={36} color="#fff" />
             </TouchableOpacity>
             <Image source={{ uri: previewUrl }} style={s.imgPreview} />
           </View>
@@ -248,7 +246,7 @@ const s = StyleSheet.create({
 
   // Image preview
   imgModalBg: { flex: 1, backgroundColor: "rgba(0,0,0,0.85)", justifyContent: "center", alignItems: "center" },
-  imgContainer: { width: "90%", position: "relative" },
-  imgClose: { position: "absolute", top: -16, right: -16, zIndex: 10, backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 20 },
-  imgPreview: { width: "100%", height: "70%", resizeMode: "contain", borderRadius: radius.lg },
+  imgContainer: { width: "90%", alignItems: "center" },
+  imgClose: { alignSelf: "flex-end", marginBottom: 8, padding: 4 },
+  imgPreview: { width: "100%", height: 400, resizeMode: "contain", borderRadius: radius.lg },
 });
