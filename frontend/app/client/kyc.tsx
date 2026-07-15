@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
-import * as DocumentPicker from "expo-document-picker";
 import { kycApi } from "../../src/shared/api";
 import { useAuthStore } from "../../src/shared/stores/authStore";
 import ScreenContainer from "../../src/shared/components/ScreenContainer";
@@ -40,49 +39,32 @@ export default function KYCScreen() {
     catch { setMsg("err"); } finally { setSubmitting(false); }
   };
 
-  const pickAndUpload = async (docType: string) => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ["image/*", "application/pdf"],
-        copyToCacheDirectory: true,
-      });
-      if (result.canceled || !result.assets?.[0]) return;
-
+  const createFileInput = (docType: string) => {
+    // Create a native HTML file input for web
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*,application/pdf";
+    input.onchange = async (e: any) => {
+      const file = e.target?.files?.[0];
+      if (!file) return;
       setUploading(true); setMsg("");
-      const asset = result.assets[0];
-      console.log("Picked:", asset.name, asset.mimeType);
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("document_type", docType);
 
-      // On web, use the file property directly. On native, fetch the URI blob.
-      let blob: Blob;
-      if (asset.file) {
-        blob = asset.file;
-      } else {
-        const blobRes = await fetch(asset.uri);
-        blob = await blobRes.blob();
-      }
-      console.log("Blob size:", blob.size);
-
-      const fd = new FormData();
-      fd.append("file", blob, asset.name || "document.jpg");
-      fd.append("document_type", docType);
-
-      const token = useAuthStore.getState().tokens?.access_token;
-      const res = await fetch("https://tradescope-ai-api.onrender.com/api/v1/client/kyc/documents", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd,
-      });
-
-      const data = await res.text();
-      console.log("Response:", res.status, data);
-
-      if (res.ok) { setMsg("uploaded"); fetch(); }
-      else { setMsg(`Error ${res.status}: ${data}`); }
-    } catch (e: any) {
-      console.error("Upload error:", e.message || e);
-      setMsg(`Failed: ${e.message || "Unknown error"}`);
-    }
-    finally { setUploading(false); }
+        const token = useAuthStore.getState().tokens?.access_token;
+        const res = await fetch("https://tradescope-ai-api.onrender.com/api/v1/client/kyc/documents", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
+        });
+        if (res.ok) { setMsg("uploaded"); fetch(); }
+        else { const d = await res.text(); setMsg(`Error ${res.status}: ${d}`); }
+      } catch (e: any) { setMsg(`Failed: ${e.message}`); }
+      finally { setUploading(false); }
+    };
+    input.click();
   };
 
   const sk = kyc?.kyc_profile?.status || user?.kyc_status || "not_submitted";
@@ -116,7 +98,7 @@ export default function KYCScreen() {
               <Text style={s.cardSub}>Select the type of document you want to upload:</Text>
               <View style={s.uploadGrid}>
                 {DOC_TYPES.map((dt) => (
-                  <TouchableOpacity key={dt.key} style={s.uploadItem} onPress={() => pickAndUpload(dt.key)} disabled={uploading} activeOpacity={0.7}>
+                  <TouchableOpacity key={dt.key} style={s.uploadItem} onPress={() => createFileInput(dt.key)} disabled={uploading} activeOpacity={0.7}>
                     <View style={s.uploadIcon}>
                       <Ionicons name={dt.icon as any} size={22} color={colors.accent} />
                     </View>
