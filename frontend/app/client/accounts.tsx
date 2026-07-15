@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { accountApi, TradingAccount } from "../../src/shared/api";
 import ScreenContainer from "../../src/shared/components/ScreenContainer";
@@ -10,8 +10,8 @@ export default function AccountsScreen() {
   const router = useRouter();
   const [accounts, setAccounts] = useState<TradingAccount[]>([]);
   const [loading, setLoading] = useState(true);
-  const fetch = async () => { try { setAccounts(await accountApi.list()); } catch {} finally { setLoading(false); } };
-  useEffect(() => { fetch(); }, []);
+  const fetch = async () => { setLoading(true); try { setAccounts(await accountApi.list()); } catch {} finally { setLoading(false); } };
+  useFocusEffect(useCallback(() => { fetch(); }, []));
 
   return (
     <ScreenContainer max={1400} scroll>
@@ -34,7 +34,7 @@ export default function AccountsScreen() {
       ) : (
         <View style={s.grid}>
           {accounts.map((a) => (
-            <View key={a.id} style={s.card}>
+            <TouchableOpacity key={a.id} style={s.card} onPress={() => router.push(`/client/accounts/${a.id}`)} activeOpacity={0.7}>
               {/* Card top */}
               <View style={s.cardTop}>
                 <View style={[s.cardIcon, { backgroundColor: a.environment === "demo" ? colors.accentBg : colors.warningBg }]}>
@@ -57,7 +57,7 @@ export default function AccountsScreen() {
                 <Tag icon="resize-outline" label={`1:${a.leverage}`} />
                 <Tag icon="logo-usd" label={a.base_currency} />
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
       )}
