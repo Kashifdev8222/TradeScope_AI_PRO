@@ -95,7 +95,7 @@ export default function KYCScreen() {
           )}
 
           {/* Upload Documents */}
-          {(sk === "not_submitted" || sk === "rejected") && (
+          {(sk !== "approved") && (
             <View style={s.card}>
               <Text style={s.cardTitle}>Upload Documents</Text>
               <Text style={s.cardSub}>Select the type of document you want to upload:</Text>
@@ -138,7 +138,7 @@ export default function KYCScreen() {
             </View>
           )}
 
-          {(sk === "not_submitted" || sk === "rejected") && (
+          {(sk !== "approved") && (
             <TouchableOpacity style={[s.btn, submitting && { opacity: 0.7 }]} onPress={submit} disabled={submitting} activeOpacity={0.7}>
               {submitting ? <ActivityIndicator color="#fff" /> : <Text style={s.btnT}>Submit for Review</Text>}
             </TouchableOpacity>
