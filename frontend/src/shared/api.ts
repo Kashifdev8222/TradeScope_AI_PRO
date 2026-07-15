@@ -15,29 +15,58 @@ function getAccessToken(): string | null {
   return useAuthStore.getState().tokens?.access_token ?? null;
 }
 
+let _refreshPromise: Promise<boolean> | null = null;
+
+async function refreshToken(): Promise<boolean> {
+  if (_refreshPromise) return _refreshPromise;
+  _refreshPromise = (async () => {
+    try {
+      const refreshToken = useAuthStore.getState().tokens?.refresh_token;
+      if (!refreshToken) return false;
+      const res = await fetch(`${API_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+      if (!res.ok) { useAuthStore.getState().logout(); return false; }
+      const data = await res.json();
+      useAuthStore.getState().setTokens(data);
+      return true;
+    } catch { return false; }
+  })();
+  return _refreshPromise;
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_URL}${path}`;
-  const token = getAccessToken();
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(options.headers as Record<string, string>),
+  const doFetch = async () => {
+    const token = getAccessToken();
+    const headers: Record<string, string> = {
+      ...(options.headers as Record<string, string>),
+    };
+    // Don't set Content-Type for FormData (browser sets it with boundary)
+    if (!(options.body instanceof FormData)) {
+      headers["Content-Type"] = "application/json";
+    }
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    return fetch(url, { ...options, headers });
   };
 
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
+  let response = await doFetch();
 
-  const response = await fetch(url, { ...options, headers });
+  // Auto-refresh token on 401
+  if (response.status === 401 && !path.includes("/auth/")) {
+    _refreshPromise = null;
+    const refreshed = await refreshToken();
+    if (refreshed) response = await doFetch();
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(
-      (error as any).detail || `Request failed: ${response.status}`
-    );
+    throw new Error((error as any).detail || `Request failed: ${response.status}`);
   }
 
   return response.json();
