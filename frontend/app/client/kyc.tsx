@@ -1,9 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Linking } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { kycApi } from "../../src/shared/api";
-import { useAuthStore } from "../../src/shared/stores/authStore";
 import ScreenContainer from "../../src/shared/components/ScreenContainer";
 import { colors, spacing, radius, fontSize, fontWeight } from "../../src/shared/theme";
 
@@ -47,19 +46,10 @@ export default function KYCScreen() {
     finally { setSubmitting(false); }
   };
 
-  // Get signed URL for preview
-  const previewDoc = async (docId: string) => {
-    try {
-      const token = useAuthStore.getState().tokens?.access_token;
-      const res = await fetch(`https://tradescope-ai-api.onrender.com/api/v1/client/kyc/documents/${docId}/url`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.url) Linking.openURL(data.url);
-        else setMsg("Could not generate preview URL");
-      }
-    } catch { setMsg("Preview failed"); }
+  // Preview by opening Supabase storage URL directly (bucket is public)
+  const previewDoc = (storagePath: string) => {
+    const url = `https://dzvsdphddukzxqamzktc.supabase.co/storage/v1/object/public/kyc-documents/${storagePath}`;
+    window.open(url, "_blank");
   };
 
   const kycStatus = kyc?.kyc_profile?.status || "not_submitted";
@@ -125,7 +115,7 @@ export default function KYCScreen() {
                           <View style={[s.dot, { backgroundColor: colors.success }]} />
                           <Text style={{ color: colors.success, fontSize: 12 }}>Uploaded</Text>
                           {/* Preview button */}
-                          <TouchableOpacity onPress={() => previewDoc(existing[0].id)} style={s.previewLink}>
+                          <TouchableOpacity onPress={() => previewDoc(existing[0].storage_path)} style={s.previewLink}>
                             <Ionicons name="eye-outline" size={14} color={colors.accent} />
                             <Text style={{ color: colors.accent, fontSize: 11 }}>View</Text>
                           </TouchableOpacity>
